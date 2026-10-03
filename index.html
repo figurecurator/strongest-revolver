@@ -1,0 +1,2793 @@
+<!-- SPDX-License-Identifier: Apache-2.0; Copyright (c) 2026 RainbowSoft.
+     Game names and branding are reserved; see TRADEMARKS.md. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Strongest Revolver v0.18</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gothic+A1:wght@400;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#17120e;
+    --panel:#241c15;
+    --panel-hi:#2e241a;
+    --line:#453424;
+    --vellum:#e6dcc4;
+    --dim:#93826a;
+    --brass:#e0a93c;
+    --sand:#c9a173;
+    --steel:#7f8c96;
+    --blood:#c1483a;
+    --display:'Black Han Sans','Gothic A1',sans-serif;
+    --body:'Gothic A1','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{
+    width:100%;max-width:100%;overflow-x:hidden;overflow-x:clip;
+    overscroll-behavior-x:none;background:var(--void);
+  }
+  body{
+    width:100%;max-width:100%;min-width:0;overflow-x:hidden;overflow-x:clip;
+    overscroll-behavior-x:none;touch-action:pan-y pinch-zoom;
+    background:var(--void);
+    color:var(--vellum);
+    font-family:var(--body);
+    -webkit-tap-highlight-color:transparent;
+    padding:14px max(12px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  }
+  .wrap{width:100%;max-width:760px;min-width:0;margin:0 auto}
+
+  /* ── header ── */
+  .top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .top>div:first-child{min-width:0}
+  .title{font-family:var(--display);font-size:clamp(20px,5.6vw,30px);letter-spacing:-.02em;line-height:1}
+  .title em{font-style:normal;color:var(--brass)}
+  .sub{font-size:11px;color:var(--dim);letter-spacing:.1em;margin-top:6px}
+  .sub b{color:var(--sand);font-weight:700;letter-spacing:.02em}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+  .chip{
+    font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 7px;
+    border:1px solid var(--line);color:var(--sand);background:rgba(201,161,115,.08);
+  }
+  .chip.boss{color:#1a1208;background:var(--brass);border-color:var(--brass)}
+  .chip.rewind{color:var(--brass);border-color:var(--brass);background:rgba(224,169,60,.10)}
+  .purse{text-align:right;line-height:1.1;flex:none}
+  .purse .k{font-size:10px;letter-spacing:.18em;color:var(--dim)}
+  .purse .v{font-family:var(--mono);font-weight:700;font-size:clamp(17px,4.6vw,22px);color:var(--brass)}
+  .purse .st{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--sand);margin-top:4px}
+  .purse .st.cold{color:var(--dim)}
+  .purse .st.run{color:var(--dim);margin-top:2px}
+
+  /* ── field ── */
+  .field-shell{
+    position:relative;border:2px solid var(--line);border-radius:3px;
+    background:#12100d;overflow:hidden;
+  }
+  canvas#field{display:block;width:100%;max-width:100%;height:clamp(260px,44vh,400px);touch-action:pan-y;-webkit-user-select:none;user-select:none}
+  .banner{
+    position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+    font-family:var(--display);color:var(--brass);opacity:0;transition:opacity .1s;
+    text-shadow:0 3px 0 #000;text-align:center;padding:0 16px;
+  }
+  .banner.on{opacity:1}
+  .banner.quiet{font-size:clamp(20px,6vw,34px);color:#6b5b45;letter-spacing:.5em;text-shadow:none}
+  .banner.shout{font-size:clamp(44px,13vw,84px);letter-spacing:.06em;color:#f0c25a}
+  .banner.note{font-size:clamp(15px,4vw,22px);color:var(--vellum);letter-spacing:.02em;line-height:1.4;white-space:pre-line}
+
+  /* ── firing deck ── */
+  .deck{margin-top:12px;display:flex;gap:10px;align-items:flex-end}
+  canvas#cyl{width:66px;height:66px;flex:none}
+  .gauge-block{flex:1;min-width:0}
+  .gauge-meta{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11px;color:var(--dim);letter-spacing:.06em;margin-bottom:5px}
+  .gauge-meta b{font-family:var(--mono);color:var(--vellum);font-weight:700}
+  .combo{color:var(--brass);flex:none}
+  .gauge{
+    position:relative;height:44px;border:2px solid var(--line);border-radius:2px;
+    background:repeating-linear-gradient(90deg,#1e1811 0 9px,#191410 9px 10px);
+    cursor:pointer;overflow:hidden;touch-action:manipulation;
+    -webkit-user-select:none;user-select:none;
+  }
+  .gauge::before,.gauge::after{
+    content:'';position:absolute;top:0;bottom:0;width:8px;background:var(--panel-hi);
+    border-right:2px solid var(--line);
+  }
+  .gauge::after{right:0;border-right:0;border-left:2px solid var(--line)}
+  .silh{
+    position:absolute;top:0;bottom:0;display:flex;pointer-events:none;
+    border-left:1px solid rgba(230,220,196,.34);border-right:1px solid rgba(230,220,196,.34);
+  }
+  .silh .seg{
+    position:relative;height:100%;display:flex;align-items:flex-end;justify-content:center;
+    overflow:hidden;border-right:1px solid rgba(20,15,10,.45);
+  }
+  .silh .seg:last-child{border-right:0}
+  .silh .seg i{
+    font-style:normal;font-size:9px;font-family:var(--mono);letter-spacing:-.02em;
+    color:rgba(230,220,196,.5);padding-bottom:2px;white-space:nowrap;
+  }
+  .silh.armored .seg:not(.head){filter:saturate(.15) brightness(.72)}
+  .weak-mark{
+    position:absolute;top:3px;bottom:3px;z-index:2;border:1px dashed rgba(224,169,60,.75);
+    background:rgba(224,169,60,.12);box-shadow:inset 0 0 8px rgba(224,169,60,.18);
+  }
+  .weak-mark.found{
+    border-style:solid;border-color:var(--blood);background:rgba(193,72,58,.28);
+    box-shadow:0 0 9px rgba(193,72,58,.5);
+  }
+  .shot-marks{position:absolute;inset:0;pointer-events:none;z-index:3}
+  .shot-mark{
+    position:absolute;top:4px;bottom:4px;width:2px;margin-left:-1px;
+    background:var(--sand);box-shadow:0 0 4px rgba(201,161,115,.55);
+  }
+  .shot-mark.head{background:var(--blood);box-shadow:0 0 5px rgba(193,72,58,.7)}
+  .shot-mark.weak{width:3px;background:var(--brass);box-shadow:0 0 6px rgba(224,169,60,.85)}
+  .shot-mark.armor{background:var(--steel);box-shadow:none}
+  .nock{
+    position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;
+    background:var(--vellum);box-shadow:0 0 10px rgba(230,220,196,.7);pointer-events:none;
+  }
+  .nock::before,.nock::after{
+    content:'';position:absolute;left:-4.5px;width:12px;height:7px;background:var(--vellum);
+    clip-path:polygon(50% 100%,0 0,100% 0);
+  }
+  .nock::before{top:-1px}
+  .nock::after{bottom:-1px;transform:rotate(180deg)}
+  .reload-veil{
+    position:absolute;inset:0;background:rgba(10,8,6,.78);pointer-events:none;
+    transform-origin:left;
+  }
+  .reload-veil span{
+    position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+    text-align:center;font-size:11px;letter-spacing:.28em;color:var(--sand);
+  }
+
+  /* ── controls ── */
+  .row{display:flex;gap:8px;min-width:0;margin-top:10px}
+  button{
+    font-family:var(--body);font-weight:700;color:var(--vellum);
+    background:var(--panel);border:2px solid var(--line);border-radius:2px;
+    cursor:pointer;transition:transform .06s,background .12s,border-color .12s;
+  }
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+  .fire{flex:1;min-width:0;padding:14px;font-family:var(--display);font-size:18px;letter-spacing:.06em;background:#43301a;border-color:#7a5a26}
+  .fire:hover{background:#503a20}
+  .fire.go{background:#2f3a22;border-color:#6d8a3a;color:#dfeac2}
+  .fire.go:hover{background:#3a4a2a}
+  .reload{padding:14px 14px;font-size:13px;min-width:96px}
+  .reload.urgent{border-color:var(--brass);color:var(--brass)}
+  .focus{padding:10px 12px;font-size:12px;min-width:92px;color:#d8cda8}
+  .focus.on{background:#443b20;border-color:var(--brass);color:#fff2b5;box-shadow:0 0 16px rgba(224,169,60,.28)}
+  .focus:disabled{opacity:.34;cursor:not-allowed}
+  .toggle{padding:14px 14px;font-size:13px;min-width:78px}
+  .toggle.on{background:#3a2c16;border-color:var(--brass);color:var(--brass)}
+  .toggle:disabled{opacity:.34;cursor:not-allowed}
+  .snd{min-width:48px;font-size:15px}
+  .lang{min-width:58px;padding:14px 10px;font-family:var(--mono);font-size:10px}
+
+  /* ── shop ── */
+  h2{
+    font-family:var(--display);font-size:14px;letter-spacing:.14em;color:var(--dim);
+    margin:22px 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px;
+  }
+  h2 #shopState{float:right;font-family:var(--mono);font-size:10px;letter-spacing:.06em;font-weight:500}
+  h2 #shopState.open{color:var(--brass)}
+  h2 #shopState.shut{color:#6b5b45}
+  .shop{display:grid;gap:8px;grid-template-columns:1fr;transition:opacity .18s}
+  .shop.locked{opacity:.38}
+  @media(min-width:620px){.shop{grid-template-columns:1fr 1fr}}
+  .card{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    padding:11px 12px;background:var(--panel);
+  }
+  .card:hover:not(:disabled){background:var(--panel-hi);border-color:var(--sand)}
+  .card:disabled{opacity:.42;cursor:not-allowed}
+  .card .lv{
+    font-family:var(--mono);font-weight:700;font-size:12px;color:var(--brass);
+    border:1px solid var(--line);padding:5px 6px;min-width:42px;text-align:center;flex:none;
+  }
+  .card .txt{flex:1;min-width:0}
+  .card .nm{display:block;font-size:14px;font-weight:900;line-height:1.25}
+  .card .ds{font-size:11px;color:var(--dim);line-height:1.35;margin-top:2px}
+  .card .pr{font-family:var(--mono);font-size:12px;font-weight:700;flex:none}
+  .card .pr.ok{color:var(--brass)}
+  .card .pr.no{color:var(--blood)}
+
+  .doctrine-head{
+    display:flex;align-items:end;justify-content:space-between;gap:10px;
+    margin-top:18px;margin-bottom:8px;
+  }
+  .doctrine-head h2{margin:0;flex:1}
+  .doctrine-note{font-size:10px;color:var(--dim);line-height:1.4;text-align:right}
+  .doctrines{display:grid;grid-template-columns:1fr;gap:8px}
+  @media(min-width:620px){.doctrines{grid-template-columns:repeat(3,1fr)}}
+  .doctrine-card{
+    padding:11px 12px;text-align:left;min-height:96px;
+    display:flex;flex-direction:column;gap:5px;
+  }
+  .doctrine-card:hover:not(:disabled){background:var(--panel-hi);border-color:var(--sand)}
+  .doctrine-card.active{border-color:var(--brass);background:#332819}
+  .doctrine-card:disabled:not(.active){opacity:.42;cursor:not-allowed}
+  .doctrine-card b{font-size:13px;color:var(--vellum)}
+  .doctrine-card span{font-size:10px;line-height:1.45;color:var(--dim)}
+  .doctrine-card em{font-style:normal;font-family:var(--mono);font-size:9px;color:var(--brass)}
+  .stats{
+    margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--dim);
+    line-height:1.9;border-top:1px solid var(--line);padding-top:10px;
+  }
+  .stats b{color:var(--vellum);font-weight:700}
+  .focus-track{
+    height:5px;margin:3px 0 5px;background:#17120d;border:1px solid var(--line);
+    overflow:hidden;opacity:.72;
+  }
+  .focus-fill{
+    width:100%;height:100%;background:var(--brass);transform-origin:left;
+    transition:background .1s;
+  }
+  .focus-track.on{box-shadow:0 0 10px rgba(224,169,60,.45);opacity:1}
+  .focus-track.on .focus-fill{background:#fff0a6}
+  .savebar{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--dim);
+  }
+  .telemetry{
+    display:none;align-items:center;justify-content:space-between;gap:14px;
+    margin:0 0 12px;padding:12px 14px;border:1px solid rgba(201,161,115,.28);
+    background:rgba(17,13,10,.72);font-family:var(--mono);font-size:11px;line-height:1.55;
+  }
+  .telemetry.show{display:flex}
+  .telemetry-actions{display:flex;gap:8px;flex:0 0 auto}
+  @media(max-width:620px){
+    .telemetry{align-items:stretch;flex-direction:column}
+    .row{gap:6px}
+    .fire{padding:12px 7px;font-size:16px}
+    .reload{min-width:78px;padding:12px 7px}
+    .toggle{min-width:66px;padding:12px 7px}
+    .snd{min-width:40px}
+    .lang{min-width:42px;padding:12px 5px}
+  }
+  @media(max-width:350px){
+    .row{flex-wrap:wrap}
+    .fire{flex:1 1 calc(100% - 78px)}
+    .focus{flex:0 0 72px;min-width:72px}
+    .reload{flex:1 1 auto;min-width:0}
+  }
+  .slots{display:flex;gap:5px;flex-wrap:wrap}
+  .slot{padding:6px 8px;min-width:88px}
+  .slot.active{color:var(--brass);border-color:var(--brass);background:#2c2417}
+  .save-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .mini{
+    padding:5px 9px;font-size:10px;font-family:var(--mono);letter-spacing:.04em;
+    background:transparent;border:1px solid var(--line);color:var(--dim);
+  }
+  .mini:hover{color:var(--vellum);border-color:var(--sand)}
+  .mini.armed{color:var(--blood);border-color:var(--blood)}
+  .intel-open{margin-top:7px;color:var(--sand)}
+  .dossier{
+    position:fixed;inset:0;z-index:20;display:none;place-items:center;padding:16px;
+    background:rgba(10,8,6,.84);
+  }
+  .dossier.open{display:grid}
+  .dossier-panel{
+    width:min(620px,100%);max-height:min(78vh,680px);overflow:auto;
+    border:2px solid var(--line);background:var(--panel);padding:16px;
+    box-shadow:0 18px 60px #000;
+  }
+  .dossier-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .dossier-head h2{margin:0;border:0;padding:0;color:var(--brass)}
+  .dossier-copy{font-size:11px;line-height:1.55;color:var(--dim);margin:9px 0 12px}
+  .intel-list{display:grid;gap:7px}
+  .intel-row{border:1px solid var(--line);padding:9px 10px;background:#1d1711}
+  .intel-row.current{border-color:var(--brass)}
+  .intel-row b{font-size:12px;color:var(--vellum)}
+  .intel-row span{display:block;margin-top:3px;font-size:11px;color:var(--sand);line-height:1.45}
+  .intel-row em{font-style:normal;color:var(--blood)}
+  .intel-empty{font-size:12px;color:var(--dim);padding:16px 0;text-align:center}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="title" id="gameTitle">최강의 <em>리볼버</em></div>
+      <div class="sub">
+        <span id="duelPrefix">제 </span><span id="stageNo">1</span><span id="duelSuffix"> 결투</span>
+        &nbsp;·&nbsp; <b id="foeName">—</b>
+      </div>
+      <div class="chips" id="chips"></div>
+      <button class="mini intel-open" id="intelBtn">현상금 목록 · 소문 0</button>
+    </div>
+    <div class="purse">
+      <div class="k" id="bountyLabel">현 상 금</div>
+      <div class="v" id="gold">0</div>
+      <div class="st cold" id="expeditionTxt">마을 · 원정 준비</div>
+      <div class="st cold" id="chainTxt">연쇄 0</div>
+      <div class="st run" id="runTxt">사망 0 · 0:00</div>
+    </div>
+  </div>
+
+  <div class="telemetry" id="telemetryPanel">
+    <span id="telemetryCopy"></span>
+    <div class="telemetry-actions">
+      <button class="mini" id="telemetryYes"></button>
+      <button class="mini" id="telemetryNo"></button>
+    </div>
+  </div>
+
+  <div class="field-shell">
+    <canvas id="field"></canvas>
+    <div class="banner" id="banner"></div>
+  </div>
+
+  <div class="deck">
+    <canvas id="cyl" title="실린더"></canvas>
+    <div class="gauge-block">
+      <div class="gauge-meta">
+        <span id="aimLabel">조준선 — 급소에 겹치는 순간 격발</span>
+        <span class="combo" id="comboTxt"></span>
+      </div>
+      <div class="focus-track" id="focusTrack" title="집중력">
+        <div class="focus-fill" id="focusFill"></div>
+      </div>
+      <div class="gauge" id="gauge">
+        <div class="silh" id="silh"></div>
+        <div class="shot-marks" id="shotMarks"></div>
+        <div class="nock" id="nock"></div>
+        <div class="reload-veil" id="veil"><span id="reloadVeil">재 장 전</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <button class="fire" id="fireBtn"></button>
+    <button class="focus" id="focusBtn">집 중 <span style="font-size:10px;opacity:.6">SHIFT</span></button>
+    <button class="reload" id="reloadBtn">재장전 <span style="font-size:11px;opacity:.6">R</span></button>
+    <button class="toggle snd on" id="sndBtn" title="격발음 켜기/끄기">♪</button>
+    <button class="toggle lang" id="langBtn" title="언어 변경">EN</button>
+  </div>
+
+  <div class="doctrine-head">
+    <h2 id="doctrineHeading">사격 교리&nbsp;/&nbsp; D O C T R I N E</h2>
+    <div class="doctrine-note" id="doctrineNote"></div>
+  </div>
+  <div class="doctrines" id="doctrines"></div>
+
+  <h2><span id="outfitHeading">장비&nbsp;/&nbsp; O U T F I T</span> <span id="shopState"></span></h2>
+  <div class="shop" id="shop"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="savebar">
+    <div class="slots" id="slots"></div>
+    <div class="save-actions">
+      <span id="saveState">—</span>
+      <button class="mini" id="telemetryToggle"></button>
+      <button class="mini" id="wipeBtn">현재 슬롯 삭제</button>
+    </div>
+  </div>
+</div>
+
+<div class="dossier" id="dossier" aria-hidden="true">
+  <section class="dossier-panel" role="dialog" aria-modal="true" aria-labelledby="dossierTitle">
+    <div class="dossier-head">
+      <h2 id="dossierTitle">현 상 금 목 록 / 소 문</h2>
+      <button class="mini" id="intelClose">닫기 ESC</button>
+    </div>
+    <p class="dossier-copy" id="dossierCopy">쓰러뜨린 총잡이가 다음 상대의 약점을 흘린다. 소문 없이 치명점을 맞혀도 현상금 목록에 기록된다.</p>
+    <div class="intel-list" id="intelList"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const cv = $('field'), ctx = cv.getContext('2d');
+  const cc = $('cyl'), cx2 = cc.getContext('2d');
+  let W = 0, H = 0, DPR = 1, CW = 0;
+  const duelBackdrop = new Image();
+  let duelBackdropReady = false;
+  duelBackdrop.decoding = 'async';
+  duelBackdrop.onload = () => { duelBackdropReady = true; };
+  duelBackdrop.onerror = () => { duelBackdropReady = false; };
+  duelBackdrop.src = 'assets/background-concepts/western-duel-bg-01.png';
+
+  /* ───── language ───── */
+  const LANGUAGE_KEY = 'revolver:language';
+  const LANGUAGE = {
+    ko: {
+      pageTitle:'최강의 리볼버 v0.18',
+      gameTitle:'최강의 <em>리볼버</em>',
+      duelPrefix:'제 ', duelSuffix:' 결투',
+      bounty:'현 상 금',
+      cylinder:'실린더',
+      aimDefault:'조준선 — 급소에 겹치는 순간 격발',
+      focus:'집 중', reload:'재장전', reloadWide:'재 장 전',
+      sound:'격발음 켜기/끄기', language:'언어 변경',
+      doctrineHeading:'사격 교리&nbsp;/&nbsp; D O C T R I N E',
+      outfitHeading:'장비&nbsp;/&nbsp; O U T F I T',
+      telemetryCopy:'익명 플레이 데이터(진행·교리·결투 결과)를 보내 밸런스 개선을 돕습니다. 브라우저에 익명 플레이 ID를 저장하며 계정·광고 ID·기기 지문은 수집하지 않습니다.',
+      telemetryYes:'익명 데이터 공유',
+      telemetryNo:'공유하지 않기',
+      telemetryOn:'데이터 공유: 켬',
+      telemetryOff:'데이터 공유: 끔',
+      wipe:'현재 슬롯 삭제',
+      dossierTitle:'현 상 금 목 록 / 소 문',
+      dossierClose:'닫기 ESC',
+      dossierCopy:'쓰러뜨린 총잡이가 다음 상대의 약점을 흘린다. 소문 없이 치명점을 맞혀도 현상금 목록에 기록된다.'
+    },
+    en: {
+      pageTitle:'The Strongest Revolver v0.18',
+      gameTitle:'The Strongest <em>Revolver</em>',
+      duelPrefix:'Duel ', duelSuffix:'',
+      bounty:'B O U N T Y',
+      cylinder:'Cylinder',
+      aimDefault:'Aim — fire when the marker crosses a vital point',
+      focus:'F O C U S', reload:'Reload', reloadWide:'R E L O A D',
+      sound:'Toggle gunshot sound', language:'Change language',
+      doctrineHeading:'D O C T R I N E',
+      outfitHeading:'O U T F I T',
+      telemetryCopy:'Share anonymous play data (progress, doctrine, and duel results) to help balance the game. An anonymous play ID is stored in this browser; no account, advertising ID, or device fingerprint is collected.',
+      telemetryYes:'Share anonymous data',
+      telemetryNo:'Play without sharing',
+      telemetryOn:'Data sharing: On',
+      telemetryOff:'Data sharing: Off',
+      wipe:'Delete current slot',
+      dossierTitle:'B O U N T Y  B O A R D / R U M O R S',
+      dossierClose:'Close ESC',
+      dossierCopy:'Defeated gunslingers reveal the next opponent’s weakness. Discovering a vital point without a rumor also adds it to the board.'
+    }
+  };
+  let currentLanguage = (() => {
+    try{
+      const saved = localStorage.getItem(LANGUAGE_KEY);
+      if(saved === 'ko' || saved === 'en') return saved;
+    }catch(e){}
+    return (navigator.language || '').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+  })();
+  const bilingual = (ko, en) => ({ ko, en });
+  const localText = value => value && typeof value === 'object'
+    ? (value[currentLanguage] ?? value.ko ?? value.en ?? '')
+    : String(value ?? '');
+  const ui = key => LANGUAGE[currentLanguage][key] ?? LANGUAGE.en[key] ?? key;
+  let telemetryReady = false;
+  function applyStaticLanguage(){
+    document.documentElement.lang = currentLanguage;
+    document.title = ui('pageTitle');
+    $('gameTitle').innerHTML = ui('gameTitle');
+    $('duelPrefix').textContent = ui('duelPrefix');
+    $('duelSuffix').textContent = ui('duelSuffix');
+    $('bountyLabel').textContent = ui('bounty');
+    $('cyl').title = ui('cylinder');
+    $('aimLabel').textContent = ui('aimDefault');
+    $('focusTrack').title = currentLanguage === 'ko' ? '집중력' : 'Focus';
+    $('reloadVeil').textContent = ui('reloadWide');
+    $('reloadBtn').innerHTML = `${ui('reload')} <span style="font-size:11px;opacity:.6">R</span>`;
+    $('sndBtn').title = ui('sound');
+    $('langBtn').title = ui('language');
+    $('langBtn').textContent = currentLanguage === 'ko' ? 'EN' : '한국어';
+    $('doctrineHeading').innerHTML = ui('doctrineHeading');
+    $('outfitHeading').innerHTML = ui('outfitHeading');
+    $('telemetryCopy').textContent = ui('telemetryCopy');
+    $('telemetryYes').textContent = ui('telemetryYes');
+    $('telemetryNo').textContent = ui('telemetryNo');
+    $('wipeBtn').textContent = ui('wipe');
+    $('dossierTitle').textContent = ui('dossierTitle');
+    $('intelClose').textContent = ui('dossierClose');
+    $('dossierCopy').textContent = ui('dossierCopy');
+    if(telemetryReady) renderTelemetryConsent();
+  }
+
+  /* ───── anonymous playtest telemetry ───── */
+  // Public copies do not send play data to RainbowSoft's production service.
+  const TELEMETRY_ENDPOINT = '';
+  const TELEMETRY_BUILD = '0.18-itch-alpha2';
+  const TELEMETRY_CONSENT_KEY = 'revolver:telemetryConsent';
+  const TELEMETRY_QUEUE_KEY = 'revolver:telemetryQueue';
+  const TELEMETRY_PLAYER_KEY = 'revolver:telemetryPlayerId';
+  const newTelemetryId = () => crypto.randomUUID
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+        return (c === 'x' ? r : (r & 3) | 8).toString(16);
+      });
+  const telemetrySessionId = newTelemetryId();
+  const telemetrySource = (() => {
+    const host = String(location.hostname || '').toLowerCase();
+    if(location.protocol === 'file:' || host === 'localhost' || host === '127.0.0.1' || host === '::1'){
+      return 'local';
+    }
+    if(host === 'itch.io' || host.endsWith('.itch.io') || host.endsWith('.itch.zone')) return 'itch';
+    return 'web';
+  })();
+  let telemetryPlayerId = null;
+  function getTelemetryPlayerId(){
+    if(telemetryPlayerId) return telemetryPlayerId;
+    try{
+      const saved = localStorage.getItem(TELEMETRY_PLAYER_KEY);
+      if(saved && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(saved)){
+        telemetryPlayerId = saved;
+        return telemetryPlayerId;
+      }
+    }catch(e){}
+    telemetryPlayerId = newTelemetryId();
+    try{ localStorage.setItem(TELEMETRY_PLAYER_KEY, telemetryPlayerId); }catch(e){}
+    return telemetryPlayerId;
+  }
+  let telemetryConsent = (() => {
+    if(!TELEMETRY_ENDPOINT) return false;
+    try{
+      const value = localStorage.getItem(TELEMETRY_CONSENT_KEY);
+      return value === 'yes' ? true : value === 'no' ? false : null;
+    }catch(e){ return null; }
+  })();
+  let telemetryQueue = (() => {
+    if(!TELEMETRY_ENDPOINT) return [];
+    try{
+      const value = JSON.parse(localStorage.getItem(TELEMETRY_QUEUE_KEY) || '[]');
+      return Array.isArray(value) ? value.slice(-100) : [];
+    }catch(e){ return []; }
+  })();
+  let telemetrySending = false, telemetryRetry = 0, telemetrySessionStarted = false;
+
+  function saveTelemetryQueue(){
+    try{ localStorage.setItem(TELEMETRY_QUEUE_KEY, JSON.stringify(telemetryQueue.slice(-100))); }catch(e){}
+  }
+  function renderTelemetryConsent(){
+    if(!$('telemetryPanel')) return;
+    if(!TELEMETRY_ENDPOINT){
+      $('telemetryPanel').classList.remove('show');
+      $('telemetryToggle').style.display = 'none';
+      return;
+    }
+    $('telemetryPanel').classList.toggle('show', telemetryConsent === null);
+    $('telemetryToggle').textContent = telemetryConsent === true ? ui('telemetryOn') : ui('telemetryOff');
+  }
+  function setTelemetryConsent(value){
+    if(!TELEMETRY_ENDPOINT) return;
+    telemetryConsent = !!value;
+    try{ localStorage.setItem(TELEMETRY_CONSENT_KEY, telemetryConsent ? 'yes' : 'no'); }catch(e){}
+    if(!telemetryConsent){
+      telemetryQueue = [];
+      telemetryPlayerId = null;
+      saveTelemetryQueue();
+      try{ localStorage.removeItem(TELEMETRY_PLAYER_KEY); }catch(e){}
+    }
+    renderTelemetryConsent();
+    if(telemetryConsent){
+      sendSessionStart();
+      flushTelemetry();
+    }
+  }
+  function telemetryEvent(eventName, payload={}, stage=null){
+    if(telemetryConsent !== true) return;
+    telemetryQueue.push({
+      id:newTelemetryId(),
+      occurred_at:new Date().toISOString(),
+      schema_version:2,
+      build_version:TELEMETRY_BUILD,
+      player_id:getTelemetryPlayerId(),
+      session_id:telemetrySessionId,
+      source:telemetrySource,
+      language:currentLanguage,
+      event_name:eventName,
+      stage:Number.isInteger(stage) && stage >= 1 ? stage : null,
+      payload
+    });
+    telemetryQueue = telemetryQueue.slice(-100);
+    saveTelemetryQueue();
+    if(telemetryQueue.length >= 5) flushTelemetry();
+  }
+  function sendSessionStart(){
+    if(telemetrySessionStarted || telemetryConsent !== true || typeof S === 'undefined') return;
+    telemetrySessionStarted = true;
+    telemetryEvent('session_start', {
+      returning:S.playMs > 0,
+      best_stage:S.bestStage,
+      active_slot:activeSlot
+    }, S.stage);
+  }
+  async function flushTelemetry(){
+    if(!TELEMETRY_ENDPOINT) return;
+    if(telemetryConsent !== true || telemetrySending || !telemetryQueue.length) return;
+    telemetrySending = true;
+    const batch = telemetryQueue.slice(0, 20);
+    try{
+      const response = await fetch(TELEMETRY_ENDPOINT, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body:JSON.stringify({ events:batch }),
+        keepalive:true
+      });
+      if(!response.ok) throw new Error(`telemetry ${response.status}`);
+      const sentIds = new Set(batch.map(event => event.id));
+      telemetryQueue = telemetryQueue.filter(event => !sentIds.has(event.id));
+      saveTelemetryQueue();
+      telemetryRetry = 0;
+      if(telemetryQueue.length) setTimeout(flushTelemetry, 250);
+    }catch(e){
+      clearTimeout(telemetryRetry);
+      telemetryRetry = setTimeout(flushTelemetry, 15000);
+    }finally{
+      telemetrySending = false;
+    }
+  }
+  function beaconTelemetry(){
+    if(!TELEMETRY_ENDPOINT) return;
+    if(telemetryConsent !== true || !telemetryQueue.length || !navigator.sendBeacon) return;
+    navigator.sendBeacon(TELEMETRY_ENDPOINT, JSON.stringify({ events:telemetryQueue.slice(0, 20) }));
+  }
+  $('telemetryYes').onclick = () => setTelemetryConsent(true);
+  $('telemetryNo').onclick = () => setTelemetryConsent(false);
+  $('telemetryToggle').onclick = () => setTelemetryConsent(telemetryConsent !== true);
+  telemetryReady = true;
+  renderTelemetryConsent();
+  applyStaticLanguage();
+
+  /* ───── 적 특성 ───── */
+  const TRAITS = [
+    { id:'fan',   name:bilingual('속사꾼','Gunslinger'),    ds:bilingual('조준 −40% · 체력 −25%','Aim −40% · Health −25%'), aim:0.60, hp:0.75 },
+    { id:'iron',  name:bilingual('무쇠 심장','Iron Heart'),  ds:bilingual('체력 x1.8 · 조준 +30%','Health x1.8 · Aim +30%'), aim:1.30, hp:1.80 },
+    { id:'buff',  name:bilingual('대구경','Large Caliber'),  ds:bilingual('한 발에 두 칸 · 조준 +60%','Two wounds per hit · Aim +60%'), aim:1.60, heavy:1 },
+    { id:'armor', name:bilingual('방탄 조끼','Bulletproof Vest'), ds:bilingual('몸통 피해 −60% · 급소는 정상','Body damage −60% · Vitals unaffected'), bodyRes:0.40 },
+    { id:'quick', name:bilingual('빠른 손','Quick Hands'),    ds:bilingual('뽑기 −45%','Draw time −45%'), draw:0.55 },
+    { id:'dust',  name:bilingual('흙먼지','Dust Storm'),      ds:bilingual('조준선 왕복 주기 −25%','Aim sweep period −25%'), sweep:0.75 },
+    { id:'slip',  name:bilingual('미꾸라지','Slippery'),      ds:bilingual('25% 확률로 한 발 흘림','25% chance to evade a shot'), dodge:0.25 },
+    { id:'drunk', name:bilingual('주정뱅이','Drunkard'),      ds:bilingual('조준 간격 ±50% 무작위','Aim interval varies by ±50%'), jitter:0.50 },
+    { id:'steel', name:bilingual('강철 조끼','Steel Vest'),   ds:bilingual('첫 2발을 통째로 튕겨낸다','Completely blocks the first 2 shots'), armor:2 }
+  ];
+  const hash = n => { const x = Math.sin(n*12.9898)*43758.5453; return x - Math.floor(x); };
+  // 같은 자원을 두 번 세금 매기는 조합은 붙이지 않는다
+  const EXCL = [
+    ['armor','slip'],   // 급소만 통하는데 급소도 흘린다
+    ['armor','dust'],   // 머리를 강제하면서 머리 조준을 불가능하게 만든다
+    ['dust','slip'],    // 좁아진 머리 창을 맞춰도 네 번에 한 번은 무효가 된다
+    ['dust','drunk']    // 둘 다 리듬을 공격한다 — 커서와 상대 발사 타이밍에 이중 과세
+  ];
+  const conflicts = (list, t) => EXCL.some(([a,b]) =>
+    (t.id===a && list.some(x=>x.id===b)) || (t.id===b && list.some(x=>x.id===a)));
+  function traitsFor(s){
+    const boss = s % 5 === 0;
+    let n = s < 5 ? 0 : s < 15 ? 1 : 2;
+    if(boss && n < 2) n += 1;
+    const out = [];
+    // 두목은 체력 x2에 아머까지 입어 머리를 강제한다 — 흙먼지가 겹치면
+    // armor+dust와 같은 이중 과세가 되므로 두목에게는 흙먼지를 붙이지 않는다
+    for(let k=0;k<n;k++){
+      let i = Math.floor(hash(s*3.7 + k*11.3) * TRAITS.length) % TRAITS.length;
+      let guard = 0;
+      while((out.indexOf(TRAITS[i]) >= 0 || conflicts(out, TRAITS[i])
+             || (boss && TRAITS[i].id === 'dust')) && guard++ < TRAITS.length)
+        i = (i+1) % TRAITS.length;
+      out.push(TRAITS[i]);
+    }
+    return out;
+  }
+
+  // 별명 16개 × 성 15개 — 개수가 서로소가 아니면 두 인덱스가 같은 주기로 돌아
+  // 15결투마다 같은 이름이 반복된다. 16개로 늘려 주기를 lcm(16,15)=240으로.
+  const NICK = ['검은 이빨','외눈','목쉰','절름발이','피눈물','재수없는','늑대','붉은 손','조용한',
+                '일곱 손가락','뱀눈','반쪽 귀','무덤 파는','웃지 않는','두 번 죽은','방울뱀'];
+  const SURN = ['맥그루','호아킨','바스케스','오브라이언','칼훈','딕슨','모레노','휘트먼',
+                '가르시아','스텁스','헨더슨','랜섬','코디','바틀렛','슬레이터'];
+  const NICK_EN = {
+    '검은 이빨':'Blacktooth','외눈':'One-Eye','목쉰':'Raspy','절름발이':'Limping',
+    '피눈물':'Blood-Eye','재수없는':'Luckless','늑대':'Wolf','붉은 손':'Red Hand',
+    '조용한':'Quiet','일곱 손가락':'Seven-Finger','뱀눈':'Snake-Eyes','반쪽 귀':'Half-Ear',
+    '무덤 파는':'Gravedigger','웃지 않는':'Grim','두 번 죽은':'Twice-Dead','방울뱀':'Rattlesnake'
+  };
+  const SURN_EN = {
+    '맥그루':'McGraw','호아킨':'Joaquin','바스케스':'Vasquez','오브라이언':"O'Brien",
+    '칼훈':'Calhoun','딕슨':'Dixon','모레노':'Moreno','휘트먼':'Whitman',
+    '가르시아':'Garcia','스텁스':'Stubbs','헨더슨':'Henderson','랜섬':'Ransom',
+    '코디':'Cody','바틀렛':'Bartlett','슬레이터':'Slater'
+  };
+  const foeNick = s => NICK[(s*7) % NICK.length];
+  const foeSurname = s => SURN[(s*11+3) % SURN.length];
+  const foeName = s => currentLanguage === 'ko'
+    ? foeNick(s) + ' ' + foeSurname(s)
+    : NICK_EN[foeNick(s)] + ' ' + SURN_EN[foeSurname(s)];
+  const foeDisplayName = f => f && f.stage ? foeName(f.stage) : '—';
+  // 별명은 약점의 대략적인 이유를 말해주고, 소문은 정확한 치명점을 알려준다.
+  const WEAK_PROFILES = {
+    '검은 이빨':  { part:'head',  name:bilingual('부러진 턱','Shattered Jaw'), clue:bilingual('검게 썩은 턱뼈가 이미 한 번 산산이 났다','His blackened jaw has already been shattered once') },
+    '외눈':       { part:'head',  name:bilingual('남은 눈','Good Eye'), clue:bilingual('남은 한쪽 눈만은 총알을 피하지 못한다','His remaining eye cannot dodge a bullet') },
+    '목쉰':       { part:'shldr', name:bilingual('목 아래 흉터','Throat Scar'), clue:bilingual('목 아래 오래된 총상이 아직 아물지 않았다','The old gunshot below his throat never healed') },
+    '절름발이':   { part:'legs',  name:bilingual('망가진 무릎','Ruined Knee'), clue:bilingual('상한 무릎을 다시 맞으면 서 있을 수 없다','Another hit to his bad knee will put him down') },
+    '피눈물':     { part:'head',  name:bilingual('피 흐르는 눈','Bleeding Eye'), clue:bilingual('피가 흐르는 눈 쪽은 이미 시야를 잃었다','The bleeding eye has already lost its sight') },
+    '재수없는':   { part:'belly', name:bilingual('옆구리 상처','Side Wound'), clue:bilingual('옆구리에 박힌 납탄을 아직 빼지 못했다','The lead in his side is still lodged there') },
+    '늑대':       { part:'chest', name:bilingual('왼쪽 폐','Left Lung'), clue:bilingual('겨울 산에서 다친 폐로 숨을 길게 쉬지 못한다','A mountain winter left one lung too weak for a deep breath') },
+    '붉은 손':    { part:'shldr', name:bilingual('방아쇠 손목','Trigger Wrist'), clue:bilingual('붉게 물든 방아쇠 손목이 한 번 꺾인 적 있다','That blood-red trigger wrist has been broken before') },
+    '조용한':     { part:'chest', name:bilingual('심장 위 흉터','Heart Scar'), clue:bilingual('말 대신 심장 위의 깊은 흉터가 정체를 말한다','The deep scar over his heart tells his story') },
+    '일곱 손가락':{ part:'shldr', name:bilingual('남은 방아쇠 손','Trigger Hand'), clue:bilingual('손가락을 잃고도 쓰는 방아쇠 손이 유일한 틈이다','The maimed hand still pulling his trigger is his only opening') },
+    '뱀눈':       { part:'head',  name:bilingual('미간','Brow'), clue:bilingual('총을 뽑을 때마다 미간을 먼저 내민다','He leads with his brow whenever he draws') },
+    '반쪽 귀':    { part:'head',  name:bilingual('귀 뒤 상처','Ear Scar'), clue:bilingual('사라진 귀 뒤로 오래된 상처가 드러난다','An old wound lies exposed behind the missing ear') },
+    '무덤 파는':  { part:'belly', name:bilingual('삽자루 멍','Shovel Bruise'), clue:bilingual('옆구리의 깊은 멍 때문에 몸을 틀지 못한다','A deep bruise keeps him from turning his side') },
+    '웃지 않는':  { part:'head',  name:bilingual('굳은 턱','Stiff Jaw'), clue:bilingual('굳어 버린 턱은 충격을 흘리지 못한다','His rigid jaw cannot roll with the impact') },
+    '두 번 죽은': { part:'chest', name:bilingual('예전 심장 총상','Old Heart Wound'), clue:bilingual('심장 곁에 두 번이나 총알이 지나간 자국이 있다','Two bullets have already passed beside his heart') },
+    '방울뱀':     { part:'legs',  name:bilingual('상한 발목','Bad Ankle'), clue:bilingual('빠르게 움직여도 한쪽 발목은 땅을 끈다','However fast he moves, one ankle drags in the dirt') }
+  };
+
+  const BLANK_FOE = { stage:1, name:'—', nick:'—', traits:[], boss:false, aimMul:1, hpMul:1, drawMul:1,
+                      sweepMul:1, bodyRes:1, heavy:0, dodge:0, jitter:0, armor:0, scale:1, weak:null };
+
+  /* ───── state ───── */
+  const DOCTRINES = [
+    { id:'precision', name:bilingual('정밀한 호흡','Measured Breath'), tag:bilingual('집중','FOCUS'),
+      ds:bilingual('집중을 사용할 수 있다. 집중 중 급소를 맞히면 연속 급소의 흐름을 오래 유지한다.','Use Focus. Vital hits while focused sustain your critical rhythm longer.') },
+    { id:'duelist', name:bilingual('무심의 결투사','Instinctive Duelist'), tag:bilingual('무집중','NO FOCUS'),
+      ds:bilingual('집중을 포기한다. DRAW 판정 +60ms, 연속 급소 보너스가 더 빠르게 오른다.','Give up Focus. Gain +60ms to the DRAW window and build consecutive vital-hit damage faster.') },
+    { id:'suppressor', name:bilingual('제압 사수','Suppressive Shooter'), tag:bilingual('통제','CONTROL'),
+      ds:bilingual('어깨와 다리의 방해 효과가 강해지고 패닝이 상대 코트를 빠르게 벗긴다.','Shoulder and leg hits disrupt more. Fanning strips enemy coats faster.') }
+  ];
+  const doctrine = () => DOCTRINES.find(d => d.id === S.doctrine) || DOCTRINES[0];
+  const emptyDoctrineStat = () => ({
+    wins:0, deaths:0, focusCrits:0, comboBonus:0,
+    suppressMs:0, legDelays:0, fanArmor:0, drawShots:0
+  });
+  const emptyExpedition = () => ({
+    active:false, kills:0, reserveAmmo:0,
+    securedGold:0, carriedGold:0, startStage:1
+  });
+  const emptyExpeditionResult = () => ({ outcome:'ready', kills:0, banked:0, lost:0 });
+
+  const S = {
+    gold: 0, stage: 1, bestStage: 1,
+    chain: 0, bestChain: 0,
+    foeHp: 100, foeMaxHp: 100,
+    lvl: { dmg:0, gauge:0, trigger:0, reload:0, cyl:0, vest:0, hp:0, hunch:0,
+           focusUses:0, focusSlow:0 },
+    hp: 100, armor: 0, foeArmor: 0, deaths: 0, playMs: 0,
+    checkpoint: 0, deathStage: 1,
+    combo: 0, bestCombo: 0, shots:0, crits:0, kills:0, bestDraw:0, fanShots:0, weakHits:0,
+    focusActivations:0,
+    dirStats: { right:{shots:0,hits:0,head:0,weak:0}, left:{shots:0,hits:0,head:0,weak:0} },
+    partStats: {},
+    posStats: { left:{wins:0,losses:0,shots:0,crits:0},
+                center:{wins:0,losses:0,shots:0,crits:0},
+                right:{wins:0,losses:0,shots:0,crits:0} },
+    intel: {}, discovered: {},
+    ammo: 6, ammoStart: 6, reload: 0, cool: 0, focus: 0,
+    cursor: 0, dir: 1, bodyX: 0.5,
+    bleed: 0, bleedT: 0,
+    phase: 'standoff', pt: 1.6, drawAt: 0, firstStrike: false,
+    doctrine: 'precision', doctrineChosen: false, doctrineStats: {},
+    betweenWin: true, bLock: 0, pendingRumor:'', pendingMastery:'',
+    expedition: emptyExpedition(), expeditionResult: emptyExpeditionResult(), reloadLoad: 0,
+    foe: Object.assign({}, BLANK_FOE), foeAim: 0, aimDur: 2.7,
+    cylSpin: 0, cylTarget: 0,
+    shake: 0, flash: 0, red: 0, recoil: 0, foeRecoil: 0, fall: 0, zoneFlash: 0
+  };
+  const F = () => S.foe;
+
+  /* ───── derived ───── */
+  // 동료 4명이 사라진 만큼 한 발의 무게를 그대로 옮겨왔다 (10 × 3.2)
+  const dmgPerShot = () => 32 * Math.pow(1.25, S.lvl.dmg);
+  // 몸 지도 — 왼쪽이 머리, 오른쪽이 발. w는 몸 창 안에서의 비율(합 1.00)
+  const BODY = [
+    { id:'head',  name:bilingual('머리','Head'), w:0.15, mult:6.00, y:0.83, col:'#c1483a' },
+    { id:'shldr', name:bilingual('어깨','Shoulder'), w:0.13, mult:1.50, y:0.72, col:'#c9a173' },
+    { id:'chest', name:bilingual('가슴','Chest'), w:0.20, mult:2.60, y:0.62, col:'#d4703f' },
+    { id:'belly', name:bilingual('배','Belly'), w:0.22, mult:1.00, y:0.48, col:'#c9a173' },
+    { id:'legs',  name:bilingual('다리','Legs'), w:0.30, mult:0.35, y:0.22, col:'#8b8f88' }
+  ];
+  const bodyPart = id => BODY.find(p => p.id === id);
+  const bodyPartStart = id => {
+    let a = 0;
+    for(const p of BODY){ if(p.id === id) return a; a += p.w; }
+    return 0;
+  };
+  function weakPointFor(stage, nick=foeNick(stage)){
+    const profile = WEAK_PROFILES[nick] || WEAK_PROFILES['재수없는'];
+    const part = bodyPart(profile.part);
+    const width = Math.min(0.052, part.w * 0.42);
+    const pad = Math.min(0.012, Math.max(0, (part.w-width)/3));
+    const room = Math.max(0, part.w - width - pad*2);
+    const start = bodyPartStart(part.id) + pad + hash(stage*17.17 + 4.2) * room;
+    return { part:part.id, name:profile.name, clue:profile.clue, start, width };
+  }
+  const clearedBosses = () => Math.max(0, Math.floor(S.checkpoint / 5));
+  // 현상금 두목 하나를 넘을 때마다 모든 총잡이에게 통하는 머리 사격이 강해진다.
+  const headMult = () => 6 + clearedBosses();
+  // 소문으로 찾은 작은 치명점은 성장한 머리 사격의 두 배. 패닝으로는 발동하지 않는다.
+  const weakMult = () => headMult() * 2;
+  // 몸 사격은 두목을 넘을수록 완만히 성장한다. 머리의 폭발력은 넘지 않는다.
+  const bodyMastery = () => Math.min(2.5, 1 + clearedBosses() * 0.12);
+  const bodyMult = part => part ? part.mult * bodyMastery() : 0;
+  // 조준경: 표적이 크게 보인다 — 몸 창 전체가 넓어지고 부위 비율은 그대로
+  const bodyW = () => 0.26 + 0.047 * S.lvl.gauge;
+  const headW = () => bodyW() * BODY[0].w;
+  const headCenter = () => S.bodyX - bodyW()/2 + headW()/2;
+  // 커서 위치가 어느 부위인지. 몸 창을 벗어나면 null(허공)
+  function partAt(c){
+    const w = bodyW(), u = (c - (S.bodyX - w/2)) / w;
+    if(u < 0 || u > 1) return null;
+    let a = 0;
+    for(const p of BODY){ a += p.w; if(u <= a) return p; }
+    return BODY[BODY.length-1];
+  }
+  function weakAt(c){
+    const q = F().weak, w = bodyW();
+    if(!q || w <= 0) return false;
+    const u = (c - (S.bodyX - w/2)) / w;
+    return u >= q.start && u <= q.start + q.width;
+  }
+  const bodyUAt = c => (c - (S.bodyX - bodyW()/2)) / bodyW();
+  function nearWeakAt(c){
+    if(!S.intel[F().stage] || weakAt(c) || !F().weak) return false;
+    const q = F().weak, u = bodyUAt(c), p = partAt(c);
+    if(!p || p.id !== q.part) return false;
+    const pad = Math.min(0.018, q.width * 0.5);
+    return u >= q.start - pad && u <= q.start + q.width + pad;
+  }
+  const nearWeakMult = part => Math.max(bodyMult(part), headMult() * 0.55);
+  const shotGap  = () => Math.max(0.13, 0.40 * Math.pow(0.90, S.lvl.trigger));
+  // 패닝 — 왼손으로 공이치기를 연타하는 속사. 격발 훈련이 물량 빌드의 정체성이 된다.
+  const fanGap   = () => Math.max(0.06, shotGap() * 0.45);
+  const FOCUS_CHARGE = 0.70;
+  const focusUses = () => 1 + S.lvl.focusUses;
+  const focusMax = () => FOCUS_CHARGE * focusUses();
+  // 무한히 올려도 0에 닿지 않는 점근식. Lv0 38% → Lv1 33% → Lv4 22%.
+  const focusSpeed = () => {
+    const base = 0.10 + 0.28 * Math.pow(0.82, S.lvl.focusSlow);
+    return S.doctrine === 'precision' ? base * 0.88 : base;
+  };
+  const focusPct = () => Math.round(focusSpeed() * 100);
+  const focusUsesLeft = () => Math.ceil(Math.max(0, S.focus) / FOCUS_CHARGE);
+  const reloadT  = () => Math.max(0.80, 2.40 * Math.pow(0.88, S.lvl.reload));
+  // 공이치기 아래 한 칸은 비워두고 다녔다 — 5발로 시작한다
+  const capacity = () => 5 + S.lvl.cyl;
+  const reserveCapacity = () => capacity() * 3;
+  // 나와 적은 같은 규칙으로 싸운다 — 양쪽 다 체력 숫자를 갖는다
+  const maxHp    = () => Math.floor(100 * Math.pow(1.25, S.lvl.hp));
+  const armorMax = () => S.lvl.vest;   // 가죽 코트 — 피해 크기와 무관하게 한 발을 통째로 막는다
+  // v0.17: 권장 체력 투자 시 일반탄 한 발은 버티되 대구경·재장전 피격은 위험하게 남긴다.
+  const foeDmg   = () => 34 * Math.pow(1.465, S.stage - 1);
+  // 머리 창(headW × sweepT)이 55ms 밑으로 내려가지 않도록 커서를 붙잡는다.
+  // 사람의 예측 타이밍 오차가 σ 20~40ms라, 그 밑은 실력이 아니라 운이 된다.
+  const sweepT   = () => Math.max(0.30, (1.05 - (S.stage-1)*0.013) * F().sweepMul, 0.055/headW());
+  const foeAimT  = () => Math.max(0.55, (2.70 - (S.stage-1)*0.055) * F().aimMul);
+  const hunchBonus= () => S.lvl.hunch * 0.10;
+  const doctrineDrawBonus = () => S.doctrine === 'duelist' ? 0.06 : 0;
+  const drawBonus = () => hunchBonus() + doctrineDrawBonus();
+  // 하한 0.20초는 상대가 뽑는 속도의 한계 — 예감은 그 위에 얹히는 여유다
+  const foeDrawT = () => Math.max(0.20, (0.95 - (S.stage-1)*0.018) * F().drawMul) + drawBonus();
+  const comboMulAt = step => Math.min(3, 1 + Math.min(S.combo, 25) * step);
+  const comboMul = () => comboMulAt(S.doctrine === 'duelist' ? 0.12 : 0.08);
+  // 연쇄: 빗나가지 않고 이어온 급소의 수. 결투를 넘어 누적되고, 빗나감과 사망에만 끊긴다.
+  const chainMul = () => Math.min(4, 1 + S.chain * 0.05);
+  const isRewind = () => S.stage < S.bestStage;
+  // 장비는 원정을 마치고 마을에 돌아왔을 때만 만질 수 있다.
+  const shopOpen = () => S.phase === 'between' && !S.expedition.active;
+  const stageHp  = s => Math.floor(100 * Math.pow(1.55, s - 1));
+  const clearGold= s => Math.floor(28 * Math.pow(1.72, s - 1));
+
+  function clock(ms){
+    const t = Math.floor(ms/1000), h = Math.floor(t/3600),
+          m = Math.floor(t%3600/60), sec = t%60;
+    return h ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+             : `${m}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function fmt(n){
+    if(n < 1000) return (n < 10 && n % 1 ? n.toFixed(1) : Math.floor(n)).toString();
+    const u = ['K','M','B','T','Qa','Qi','Sx'];
+    let i = -1;
+    while(n >= 1000 && i < u.length - 1){ n /= 1000; i++; }
+    return n.toFixed(n < 10 ? 2 : n < 100 ? 1 : 0) + u[i];
+  }
+
+  /* ───── 사운드 (WebAudio 합성 — 외부 파일 없음) ───── */
+  const SFX = { on:true, ac:null, master:null, noise:null };
+  function audio(){
+    if(SFX.ac) return SFX.ac;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      SFX.ac = new AC();
+      SFX.master = SFX.ac.createGain();
+      SFX.master.gain.value = 0.5;
+      SFX.master.connect(SFX.ac.destination);
+      const len = Math.floor(SFX.ac.sampleRate * 0.4);
+      SFX.noise = SFX.ac.createBuffer(1, len, SFX.ac.sampleRate);
+      const d = SFX.noise.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = Math.random()*2 - 1;
+    }catch(e){ SFX.ac = null; }
+    return SFX.ac;
+  }
+  function wake(){
+    const c = audio();
+    if(c && c.state === 'suspended') c.resume().catch(()=>{});
+  }
+  function burst(t, {cut, cutEnd, gain, dur, type}){
+    const c = SFX.ac, src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = SFX.noise;
+    f.type = type || 'lowpass';
+    f.frequency.setValueAtTime(cut, t);
+    f.frequency.exponentialRampToValueAtTime(Math.max(60, cutEnd), t + dur);
+    if(f.type === 'bandpass') f.Q.value = 6;
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0006, t + dur);
+    src.connect(f); f.connect(g); g.connect(SFX.master);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+  function tone(t, f0, f1, gain, dur, type){
+    const c = SFX.ac, o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    g.gain.setValueAtTime(gain, t);
+    g.gain.exponentialRampToValueAtTime(0.0006, t + dur);
+    o.connect(g); g.connect(SFX.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function sfxShot(strong){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    burst(t, { cut: strong?5400:3600, cutEnd:280, gain: strong?0.52:0.36, dur: strong?0.28:0.20 });
+    tone(t, strong?135:115, 50, strong?0.46:0.32, 0.16);
+  }
+  function sfxFan(){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    burst(t, { cut:3000, cutEnd:240, gain:0.26, dur:0.12 });
+    tone(t, 120, 55, 0.20, 0.08);
+  }
+  function sfxHit(){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    burst(t, { cut:1100, cutEnd:120, gain:0.42, dur:0.34 });
+    tone(t, 82, 34, 0.5, 0.30);
+  }
+  function sfxReload(){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    burst(t,        { cut:2400, cutEnd:1400, gain:0.20, dur:0.05, type:'bandpass' });
+    burst(t + 0.09, { cut:3100, cutEnd:1600, gain:0.24, dur:0.06, type:'bandpass' });
+  }
+  function sfxArmor(){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    burst(t, { cut:4200, cutEnd:2600, gain:0.24, dur:0.09, type:'bandpass' });
+    tone(t, 2100, 900, 0.16, 0.14, 'square');
+  }
+  function sfxDraw(){
+    if(!SFX.on || !audio() || SFX.ac.state !== 'running') return;
+    const t = SFX.ac.currentTime;
+    tone(t, 1760, 1700, 0.26, 0.16, 'triangle');
+    tone(t, 2640, 2560, 0.12, 0.12, 'sine');
+  }
+
+  /* ───── shop ───── */
+  const SHOP = [
+    { id:'dmg', name:bilingual('탄약 구경','Caliber'),
+      ds:()=>bilingual(`한 발 ${fmt(dmgPerShot())} 피해`,`${fmt(dmgPerShot())} damage per shot`),
+      lv:()=>'Lv'+S.lvl.dmg, cost:()=>30*Math.pow(1.42,S.lvl.dmg),
+      can:()=>true, buy:()=>S.lvl.dmg++ },
+    { id:'gauge', name:bilingual('조준경','Scope'),
+      ds:()=>bilingual(`표적이 크게 보인다 — 몸 ${(bodyW()*100).toFixed(0)}% · 머리 ${(headW()*100).toFixed(1)}%`,`Larger target — body ${(bodyW()*100).toFixed(0)}% · head ${(headW()*100).toFixed(1)}%`),
+      lv:()=>'Lv'+S.lvl.gauge, cost:()=>70*Math.pow(1.95,S.lvl.gauge),
+      can:()=>S.lvl.gauge<8, buy:()=>S.lvl.gauge++ },
+    { id:'trigger', name:bilingual('격발 훈련','Trigger Training'),
+      ds:()=>bilingual(`연사 ${shotGap().toFixed(2)}초 · 패닝 ${fanGap().toFixed(2)}초`,`Fire ${shotGap().toFixed(2)}s · fan ${fanGap().toFixed(2)}s`),
+      lv:()=>'Lv'+S.lvl.trigger, cost:()=>45*Math.pow(1.7,S.lvl.trigger),
+      can:()=>S.lvl.trigger<14, buy:()=>S.lvl.trigger++ },
+    { id:'reload', name:bilingual('스피드로더','Speedloader'),
+      ds:()=>bilingual(`재장전 ${reloadT().toFixed(2)}초 — 이 동안은 무방비`,`Reload in ${reloadT().toFixed(2)}s — exposed while reloading`),
+      lv:()=>'Lv'+S.lvl.reload, cost:()=>60*Math.pow(1.75,S.lvl.reload),
+      can:()=>S.lvl.reload<12, buy:()=>S.lvl.reload++ },
+    { id:'cyl', name:bilingual('실린더 개조','Cylinder Mod'),
+      ds:()=>bilingual(`장탄 ${capacity()}발 — 재장전 사이가 길어진다`,`${capacity()} rounds — more shots between reloads`),
+      lv:()=>capacity()+(currentLanguage==='ko'?'발':' rnd'), cost:()=>260*Math.pow(3.2,S.lvl.cyl),
+      can:()=>S.lvl.cyl<4, buy:()=>{ S.lvl.cyl++; S.ammo = capacity(); } },
+    { id:'hp', name:bilingual('체력 단련','Conditioning'),
+      ds:()=>bilingual(`최대 체력 ${fmt(maxHp())} — 상대 한 발은 ${fmt(foeDmg())}`,`Max health ${fmt(maxHp())} — enemy shot ${fmt(foeDmg())}`),
+      lv:()=>'Lv'+S.lvl.hp, cost:()=>26*Math.pow(1.42,S.lvl.hp),
+      can:()=>true, buy:()=>S.lvl.hp++ },
+    { id:'vest', name:bilingual('가죽 코트','Leather Coat'),
+      ds:()=>bilingual(`${armorMax()}발을 통째로 막는다 — 피해 크기와 무관, 결투마다 충전`,`Blocks ${armorMax()} shots completely — refreshes each duel`),
+      lv:()=>armorMax()+(currentLanguage==='ko'?'발':' hit'), cost:()=>800*Math.pow(2.6,S.lvl.vest),
+      can:()=>true, buy:()=>S.lvl.vest++ },
+    { id:'hunch', name:bilingual('예감','Hunch'),
+      ds:()=>bilingual(`뽑기 판정에 +${(hunchBonus()*1000).toFixed(0)}ms 여유 — 교리 보너스와 중첩`,`+${(hunchBonus()*1000).toFixed(0)}ms DRAW window — stacks with doctrine bonuses`),
+      lv:()=>'Lv'+S.lvl.hunch, cost:()=>3000*Math.pow(3.4,S.lvl.hunch),
+      can:()=>S.lvl.hunch<2, buy:()=>S.lvl.hunch++ },
+    { id:'focusUses', name:bilingual('집중 횟수','Focus Uses'),
+      ds:()=>S.bestStage < 25
+        ? bilingual('제25결투에서 해금','Unlocks at Duel 25')
+        : bilingual(`결투당 ${focusUses()}회 · 1회 ${FOCUS_CHARGE.toFixed(2)}초 · 총 ${focusMax().toFixed(2)}초`,`${focusUses()} per duel · ${FOCUS_CHARGE.toFixed(2)}s each · ${focusMax().toFixed(2)}s total`),
+      lv:()=>'Lv'+S.lvl.focusUses, cost:()=>10000000*Math.pow(4,S.lvl.focusUses),
+      unlock:()=>S.bestStage>=25,
+      can:()=>true, buy:()=>{ S.lvl.focusUses++; S.focus = focusMax(); } },
+    { id:'focusSlow', name:bilingual('집중 강도','Focus Control'),
+      ds:()=>S.bestStage < 25
+        ? bilingual('제25결투에서 해금','Unlocks at Duel 25')
+        : bilingual(`집중 중 커서 속도 ${focusPct()}% · 강화할수록 더 느려진다`,`Cursor speed ${focusPct()}% while focused · slower with each level`),
+      lv:()=>'Lv'+S.lvl.focusSlow, cost:()=>20000000*Math.pow(4.5,S.lvl.focusSlow),
+      unlock:()=>S.bestStage>=25,
+      can:()=>true, buy:()=>S.lvl.focusSlow++ }
+  ];
+
+  function canChangeDoctrine(){
+    return !S.doctrineChosen && (S.phase === 'standoff' || S.phase === 'between');
+  }
+  function lockDoctrine(){
+    if(S.doctrineChosen) return;
+    S.doctrineChosen = true;
+    telemetryEvent('doctrine_locked', { doctrine:S.doctrine }, S.stage);
+    doctrineRenderKey = ''; chipsDirty = true;
+    save();
+  }
+  let doctrineRenderKey = '';
+  function renderDoctrines(){
+    const change = canChangeDoctrine();
+    const key = `${currentLanguage}:${S.doctrine}:${S.doctrineChosen}:${change}:${S.stage}:${S.phase}`;
+    if(key === doctrineRenderKey) return;
+    doctrineRenderKey = key;
+    $('doctrineNote').textContent = change
+      ? localText(bilingual('첫 결투 전 · 이번 슬롯의 교리를 선택','Choose a doctrine before your first duel'))
+      : localText(bilingual('이 슬롯에 고정됨 · 새 게임 전까지 변경 불가','Locked to this slot until a new game'));
+    $('doctrines').innerHTML = DOCTRINES.map(d =>
+      `<button class="doctrine-card ${d.id===S.doctrine?'active':''}" data-doctrine="${d.id}" ${change?'':'disabled'}>`+
+        `<em>${localText(d.tag)}${d.id===S.doctrine?localText(bilingual(' · 현재 교리',' · CURRENT')):''}</em>`+
+        `<b>${localText(d.name)}</b><span>${localText(d.ds)}</span>`+
+      `</button>`
+    ).join('');
+    $('doctrines').querySelectorAll('.doctrine-card').forEach(b => b.onclick = () => {
+      if(!canChangeDoctrine() || !DOCTRINES.some(d => d.id === b.dataset.doctrine)) return;
+      S.doctrine = b.dataset.doctrine;
+      focusPtrHeld = false; focusKeyHeld = false; focusing = false;
+      S.focus = focusMax();
+      doctrineRenderKey = ''; chipsDirty = true; shopDirty = true;
+      msg(localText(bilingual(`시작 교리 · ${localText(doctrine().name)}`,`Starting doctrine · ${localText(doctrine().name)}`)), 1.8);
+      save();
+    });
+  }
+
+  let shopDirty = true, chipsDirty = true, intelDirty = true, silKey = '', shopWasOpen = null;
+  function renderShop(){
+    const open = shopOpen();
+    $('shop').className = 'shop' + (open ? '' : ' locked');
+    $('shop').innerHTML = SHOP.map(u => {
+      const locked = u.unlock && !u.unlock();
+      const done = !u.can();
+      const c = u.cost(), afford = S.gold >= c;
+      return `<button class="card" data-id="${u.id}" ${locked||done||!afford||!open?'disabled':''}>
+        <span class="lv">${u.lv()}</span>
+        <span class="txt"><span class="nm">${localText(u.name)}</span><span class="ds">${localText(u.ds())}</span></span>
+        <span class="pr ${afford&&!locked?'ok':'no'}">${locked?localText(bilingual('잠김','LOCKED')):done?'MAX':fmt(c)}</span>
+      </button>`;
+    }).join('');
+    $('shop').querySelectorAll('.card').forEach(b => b.onclick = () => {
+      const u = SHOP.find(x => x.id === b.dataset.id);
+      const c = u.cost();
+      if(!shopOpen() || (u.unlock && !u.unlock()) || !u.can() || S.gold < c) return;
+      S.gold -= c; u.buy(); shopDirty = true;
+      // 마을에서 장비를 바꾸면 다음 원정 자원을 새 최대치로 정비한다.
+      if(!S.expedition.active) prepareTownResources();
+      telemetryEvent('upgrade_bought', {
+        upgrade_id:u.id,
+        cost:Math.round(c),
+        level:Number.isFinite(S.lvl[u.id]) ? S.lvl[u.id] : null,
+        doctrine:S.doctrine
+      }, S.stage);
+      save();
+    });
+  }
+  function renderChips(){
+    const f = F();
+    let h = `<span class="chip rewind" title="${localText(doctrine().ds)}">${localText(bilingual('교리','Doctrine'))} · ${localText(doctrine().name)}</span>`;
+    if(isRewind()) h += `<span class="chip rewind" title="${localText(bilingual('이미 넘은 상대 — 대치가 짧고 확정 선제탄이 발사된다','Previously defeated — brief standoff and a guaranteed opening shot'))}">${localText(bilingual(`되감기 · 최고 ${S.bestStage}`,`Rewind · Best ${S.bestStage}`))}</span>`;
+    if(f.boss) h += `<span class="chip boss" title="${localText(bilingual('체력 x2 · 현상금 x3','Health x2 · Bounty x3'))}">${localText(bilingual('현상금 두목','Bounty Boss'))}</span>`;
+    f.traits.forEach(t => { h += `<span class="chip" title="${localText(t.ds)}">${localText(t.name)}</span>`; });
+    if(S.intel[f.stage]){
+      h += `<span class="chip" title="${localText(f.weak.clue)}">${localText(bilingual('소문','Rumor'))} · ${localText(f.weak.name)}</span>`;
+    }
+    if(!h) h = `<span class="chip" style="opacity:.45">${localText(bilingual('특성 없음','No traits'))}</span>`;
+    $('chips').innerHTML = h;
+  }
+
+  function rumorFor(stage){
+    const f = buildFoe(stage);
+    return currentLanguage === 'ko'
+      ? `${foeDisplayName(f)} — ${localText(f.weak.clue)}. 치명점은 ${localText(f.weak.name)}.`
+      : `${foeDisplayName(f)} — ${localText(f.weak.clue)}. Vital point: ${localText(f.weak.name)}.`;
+  }
+  function revealIntel(stage){
+    stage = Math.max(1, stage|0);
+    if(S.intel[stage]) return false;
+    S.intel[stage] = 1;
+    intelDirty = true; chipsDirty = true; silKey = '';
+    return true;
+  }
+  function discoverWeakPoint(){
+    const stage = F().stage;
+    const fresh = !S.discovered[stage];
+    S.discovered[stage] = 1;
+    S.intel[stage] = 1;
+    S.weakHits++;
+    intelDirty = true; chipsDirty = true; silKey = '';
+    if(fresh) save();
+    return fresh;
+  }
+  function renderIntel(){
+    const stages = Object.keys(S.intel).map(Number).filter(Number.isFinite).sort((a,b)=>b-a);
+    $('intelBtn').textContent = currentLanguage === 'ko'
+      ? `현상금 목록 · 소문 ${stages.length}`
+      : `Bounty Board · ${stages.length} Rumors`;
+    $('intelList').innerHTML = stages.length
+      ? stages.slice(0, 24).map(stage => {
+          const f = buildFoe(stage), found = !!S.discovered[stage];
+          return `<article class="intel-row ${stage===S.stage?'current':''}">`+
+            `<b>${currentLanguage==='ko'?`제${stage}결투`:`Duel ${stage}`} · ${foeDisplayName(f)}${stage===S.stage?localText(bilingual(' · 현재 표적',' · CURRENT TARGET')):''}</b>`+
+            `<span>${localText(f.weak.clue)}. <em>${localText(f.weak.name)}</em>${found?localText(bilingual(' · 직접 확인',' · CONFIRMED')):''}</span>`+
+          `</article>`;
+        }).join('')
+      : `<div class="intel-empty">${localText(bilingual('아직 들은 소문이 없다.','No rumors yet.'))}</div>`;
+    intelDirty = false;
+  }
+
+  let dossierOpen = false;
+  function setDossier(open){
+    dossierOpen = !!open;
+    $('dossier').classList.toggle('open', dossierOpen);
+    $('dossier').setAttribute('aria-hidden', dossierOpen ? 'false' : 'true');
+    if(dossierOpen){ renderIntel(); $('intelClose').focus(); }
+  }
+  $('intelBtn').onclick = () => setDossier(true);
+  $('intelClose').onclick = () => setDossier(false);
+  $('dossier').addEventListener('pointerdown', e => {
+    if(e.target === $('dossier')) setDossier(false);
+  });
+
+  /* ───── geometry (side view) ───── */
+  const horizon = () => H * 0.52;
+  function playerPos(){ return { x: W*0.155, foot: H*1.03, h: H*0.66 }; }
+  function foePos(){ return { x: W*0.745, foot: H*0.74, h: H*0.31*F().scale }; }
+  function muzzle(){
+    const p = playerPos();
+    return { x: p.x + p.h*0.30 - S.recoil*p.h*0.05, y: p.foot - p.h*0.74 };
+  }
+  function foeMuzzle(){
+    const f = foePos();
+    return { x: f.x - f.h*0.30, y: f.foot - f.h*0.74 };
+  }
+
+  /* ───── entities ───── */
+  const tracers = [], parts = [], texts = [], shotMarks = [];
+  const weeds = [{x:-1,y:0,r:0,sp:0,rot:0}];
+
+  // 패닝 홀드 상태 — 저장하지 않는 순수 런타임 입력 상태
+  let ptrHeld = false, keyHeld = false, holdArmed = false, holdT = 0, fanning = false;
+  let focusPtrHeld = false, focusKeyHeld = false, focusing = false;
+  let focusWasActive = false;
+  const canFocus = () =>
+    S.doctrine === 'precision' && S.phase === 'fight' &&
+    S.reload <= 0 && !fanning && S.focus > 0;
+  const emptyPartStat = () => ({ shots:0, damage:0, control:0 });
+  const emptyDirStat = () => ({ shots:0, hits:0, head:0, weak:0 });
+  const emptyPosStat = () => ({ wins:0, losses:0, shots:0, crits:0 });
+  const targetZone = () => S.bodyX < 0.38 ? 'left' : S.bodyX > 0.62 ? 'right' : 'center';
+  const dirKey = () => S.dir > 0 ? 'right' : 'left';
+  function ensureCombatStats(){
+    if(!S.dirStats || typeof S.dirStats !== 'object') S.dirStats = {};
+    S.dirStats.right = Object.assign(emptyDirStat(), S.dirStats.right);
+    S.dirStats.left = Object.assign(emptyDirStat(), S.dirStats.left);
+    if(!S.partStats || typeof S.partStats !== 'object') S.partStats = {};
+    BODY.forEach(p => { S.partStats[p.id] = Object.assign(emptyPartStat(), S.partStats[p.id]); });
+    if(!S.posStats || typeof S.posStats !== 'object') S.posStats = {};
+    ['left','center','right'].forEach(k => {
+      S.posStats[k] = Object.assign(emptyPosStat(), S.posStats[k]);
+    });
+    S.focusActivations = Math.max(0, S.focusActivations|0);
+    if(!S.doctrineStats || typeof S.doctrineStats !== 'object') S.doctrineStats = {};
+    DOCTRINES.forEach(d => {
+      S.doctrineStats[d.id] = Object.assign(emptyDoctrineStat(), S.doctrineStats[d.id]);
+    });
+  }
+  function addShotMark(u, kind){
+    if(!Number.isFinite(u)) return;
+    shotMarks.push({ u:Math.max(0,Math.min(1,u)), kind, t:0, max:4 });
+    if(shotMarks.length > 8) shotMarks.shift();
+  }
+  function recordAimedShot(part, weak, near, u){
+    ensureCombatStats();
+    const d = S.dirStats[dirKey()];
+    d.shots++;
+    const z = S.posStats[targetZone()];
+    z.shots++;
+    if(part){
+      d.hits++;
+      S.partStats[part.id].shots++;
+      if(part.id === 'head') d.head++;
+      if(weak) d.weak++;
+      if(weak || part.id === 'head') z.crits++;
+    }
+    return { u, kind:weak ? 'weak' : part && part.id === 'head' ? 'head' : near ? 'near' : 'body' };
+  }
+  function addPartDamage(part, damage){
+    if(!part || damage <= 0) return;
+    ensureCombatStats();
+    S.partStats[part.id].damage += damage;
+  }
+  function addControl(part, amount=1){
+    if(!part) return;
+    ensureCombatStats();
+    S.partStats[part.id].control += amount;
+  }
+
+  // 상대가 서 있는 자리는 결투 동안 변하지 않는다. 적마다 다를 뿐이다.
+  function placeBody(){
+    const pad = bodyW()/2 + 0.015;
+    S.bodyX = pad + Math.random() * Math.max(0, 1 - pad*2);
+    S.zoneFlash = 1;
+  }
+
+  let msgS = '', msgT = 0;
+  const msg = (t, dur) => { msgS = t; msgT = dur || 1.6; };
+
+  function buildFoe(s){
+    const f = Object.assign({}, BLANK_FOE);
+    f.stage = s;
+    f.nick = foeNick(s);
+    f.name = foeName(s);
+    f.weak = weakPointFor(s, f.nick);
+    f.boss = s % 5 === 0;
+    f.traits = traitsFor(s);
+    f.traits.forEach(t => {
+      if(t.aim)     f.aimMul  *= t.aim;
+      if(t.hp)      f.hpMul   *= t.hp;
+      if(t.draw)    f.drawMul *= t.draw;
+      if(t.sweep)   f.sweepMul*= t.sweep;
+      if(t.bodyRes) f.bodyRes *= t.bodyRes;
+      if(t.heavy)   f.heavy   += t.heavy;
+      if(t.dodge)   f.dodge    = Math.max(f.dodge, t.dodge);
+      if(t.jitter)  f.jitter   = Math.max(f.jitter, t.jitter);
+      if(t.armor)   f.armor   += t.armor;
+    });
+    // 두목은 좋은 장비를 입고 있다
+    if(f.boss){ f.hpMul *= 2; f.armor += 1 + Math.floor(s/20); }
+    f.scale = (f.boss ? 1.12 : 1) * (f.hpMul > 1.4 ? 1.10 : f.hpMul < 0.9 ? 0.93 : 1);
+    return f;
+  }
+
+  function resetFoeAim(){
+    const j = F().jitter;
+    S.aimDur = Math.max(0.25, foeAimT() * (1 + (Math.random()-0.5)*2*j));
+    S.foeAim = 0;
+  }
+
+  let duelTelemetry = null;
+  function duelTelemetryPayload(result){
+    const f = F();
+    const d = duelTelemetry || {};
+    return {
+      result,
+      duration_ms:Math.max(0, Math.round(performance.now() - (d.startedAt || performance.now()))),
+      doctrine:S.doctrine,
+      boss:!!f.boss,
+      trait_ids:f.traits.map(trait => trait.id),
+      aimed_shots:d.aimedShots || 0,
+      fan_shots:d.fanShots || 0,
+      aimed_hits:d.aimedHits || 0,
+      reloads:d.reloads || 0,
+      focus_ms:Math.round(d.focusMs || 0),
+      damage_taken:d.damageTaken || 0,
+      armor_blocks:d.armorBlocks || 0,
+      draw_ms:Number.isFinite(d.drawMs) ? Math.round(d.drawMs) : null,
+      draw_won:typeof d.drawWon === 'boolean' ? d.drawWon : null,
+      player_hp:Math.max(0, Math.round(S.hp)),
+      enemy_hp:Math.max(0, Math.round(S.foeHp))
+    };
+  }
+
+  function topOffCylinder(){
+    const need = Math.max(0, capacity() - S.ammo);
+    const load = Math.min(need, Math.max(0, S.expedition.reserveAmmo|0));
+    S.ammo += load;
+    S.expedition.reserveAmmo -= load;
+    S.ammoStart = S.ammo;
+    return load;
+  }
+
+  function prepareTownResources(){
+    S.hp = maxHp();
+    S.armor = armorMax();
+    S.ammo = capacity();
+    S.ammoStart = S.ammo;
+    S.reload = 0; S.reloadLoad = 0;
+    S.focus = focusMax();
+    S.expedition.reserveAmmo = reserveCapacity();
+  }
+
+  function startExpedition(){
+    S.expedition = {
+      active:true, kills:0, reserveAmmo:reserveCapacity(),
+      securedGold:0, carriedGold:0, startStage:S.stage
+    };
+    S.expeditionResult = emptyExpeditionResult();
+    S.chain = 0;
+    prepareTownResources();
+    telemetryEvent('expedition_start', {
+      start_stage:S.stage,
+      reserve_ammo:S.expedition.reserveAmmo
+    }, S.stage);
+    shopDirty = true; chipsDirty = true;
+  }
+
+  function finishExpedition(survived, deferTown=false){
+    const e = S.expedition;
+    if(e.active){
+      const secured = Math.max(0, Math.floor(e.securedGold));
+      const carried = Math.max(0, Math.floor(e.carriedGold));
+      const banked = secured + (survived ? carried : 0);
+      const lost = survived ? 0 : carried;
+      S.gold += banked;
+      S.expeditionResult = {
+        outcome:survived ? 'returned' : 'defeated',
+        kills:Math.max(0, e.kills|0), banked, lost
+      };
+      telemetryEvent('expedition_end', {
+        result:survived ? 'returned' : 'defeated',
+        kills:S.expeditionResult.kills,
+        banked, lost,
+        start_stage:e.startStage,
+        end_stage:survived ? S.stage : S.deathStage
+      }, S.stage);
+      S.expedition = emptyExpedition();
+      S.chain = 0;
+    }
+    if(deferTown){ save(); return; }
+    prepareTownResources();
+    S.phase = 'between';
+    S.betweenWin = survived;
+    S.bLock = 0.6;
+    shopDirty = true; chipsDirty = true;
+    save();
+  }
+
+  function returnToTown(){
+    if(S.phase !== 'between' || !S.expedition.active || S.bLock > 0) return;
+    finishExpedition(true);
+  }
+
+  function enterTownReady(preserveResult=false){
+    ensureCombatStats();
+    S.expedition = emptyExpedition();
+    if(!preserveResult) S.expeditionResult = emptyExpeditionResult();
+    S.chain = 0;
+    prepareTownResources();
+    S.phase = 'between';
+    S.betweenWin = true;
+    S.bLock = 0;
+    shopDirty = true; chipsDirty = true;
+  }
+
+  function newDuel(resuming=false){
+    ensureCombatStats();
+    if(!S.expedition.active) startExpedition();
+    if(!resuming) topOffCylinder();
+    S.pendingRumor = '';
+    S.pendingMastery = '';
+    S.foe = buildFoe(S.stage);
+    S.foeMaxHp = Math.floor(stageHp(S.stage) * F().hpMul);
+    S.foeHp = S.foeMaxHp;
+    S.hp = Math.max(1, Math.min(maxHp(), S.hp));
+    S.armor = armorMax(); S.foeArmor = F().armor; S.combo = 0;
+    S.ammo = Math.max(0, Math.min(capacity(), S.ammo|0)); S.ammoStart = S.ammo;
+    S.reload = 0; S.reloadLoad = 0; S.cool = 0; S.bleed = 0; S.bleedT = 0;
+    S.firstStrike = false; S.fall = 0;
+    holdArmed = false; holdT = 0; fanning = false;
+    focusPtrHeld = false; focusKeyHeld = false; focusing = false; focusWasActive = false; S.focus = focusMax();
+    S.phase = 'standoff';
+    S.pt = isRewind() ? 0.25 : 1.1 + Math.random()*1.7;
+    resetFoeAim();
+    placeBody();
+    shotMarks.length = 0;
+    duelTelemetry = {
+      startedAt:performance.now(), aimedShots:0, fanShots:0, aimedHits:0,
+      reloads:0, focusMs:0, damageTaken:0, armorBlocks:0,
+      drawMs:null, drawWon:null
+    };
+    shopDirty = true; chipsDirty = true;
+  }
+
+  /* ───── the draw ───── */
+  function drawOpeningShot(label){
+    S.phase = 'fight';
+    resetFoeAim();
+    msg(label, 1.4);
+    const part = BODY.find(p => p.id === 'chest');
+    S.doctrineStats[S.doctrine].drawShots++;
+    bang(dmgPerShot(), part, true, false, false, false);
+    S.ammo--; S.cylTarget++; S.recoil = 1;
+    S.cool = shotGap();
+    if(S.ammo <= 0 && S.phase === 'fight') startReload();
+  }
+  function rewindStart(){
+    drawOpeningShot(localText(bilingual('되감기 · 확정 선제탄','Rewind · Guaranteed opening shot')));
+  }
+  function earlyDraw(){
+    S.phase = 'fight'; S.cool = 0.8; resetFoeAim();
+    msg(localText(bilingual('성급했다 — 손이 굳었다','Too soon — your hand freezes')));
+    foeFire(false);
+  }
+  function resolveDraw(timeout){
+    const rt = (performance.now() - S.drawAt) / 1000;
+    const win = !timeout && rt <= foeDrawT();
+    if(duelTelemetry){
+      duelTelemetry.drawMs = rt * 1000;
+      duelTelemetry.drawWon = win;
+    }
+    if(win){
+      if(!S.bestDraw || rt < S.bestDraw) S.bestDraw = rt;
+      const g = rt < 0.20
+        ? localText(bilingual('신 의 손','GOD HAND'))
+        : rt < 0.33 ? localText(bilingual('번 개 처 럼','LIGHTNING FAST'))
+        : localText(bilingual('간 발 의 차','BY A HAIR'));
+      drawOpeningShot(currentLanguage === 'ko'
+        ? `${g} · ${(rt*1000).toFixed(0)}ms — 확정 선제탄`
+        : `${g} · ${(rt*1000).toFixed(0)}ms — guaranteed opening shot`);
+    } else {
+      S.phase = 'fight'; resetFoeAim();
+      msg(timeout
+        ? localText(bilingual('뽑기가 늦었다','Too slow on the draw'))
+        : currentLanguage === 'ko'
+          ? `${(rt*1000).toFixed(0)}ms — 상대가 빨랐다`
+          : `${(rt*1000).toFixed(0)}ms — the enemy was faster`);
+      foeFire(false);
+    }
+  }
+
+  /* ───── shooting ───── */
+  function startReload(){
+    if(S.phase !== 'fight' || S.reload > 0 || S.ammo >= capacity()) return;
+    const rounds = Math.min(capacity() - S.ammo, Math.max(0, S.expedition.reserveAmmo|0));
+    if(rounds <= 0){
+      msg(localText(bilingual('예비 탄약이 없다 — 살아서 마을로 돌아가야 한다','No reserve ammo — make it back to town alive')), 1.6);
+      return;
+    }
+    if(duelTelemetry) duelTelemetry.reloads++;
+    focusPtrHeld = false; focusKeyHeld = false; focusing = false;
+    S.ammoStart = S.ammo;
+    S.reloadLoad = rounds;
+    S.expedition.reserveAmmo -= rounds;
+    S.reload = reloadT();
+  }
+
+  function shoot(){
+    if(S.phase !== 'fight' || S.reload > 0 || S.cool > 0) return;
+    if(S.ammo <= 0){ startReload(); return; }
+
+    let part, mult, sure = false, graze = false, weak = false, near = false, shotRecord = null;
+    if(S.firstStrike){
+      // 선제 사격은 성장한 머리 피해를 확정하고, 숨은 치명점까지 대신 찾지는 않는다.
+      part = BODY[0]; mult = headMult() * 2; sure = true; S.firstStrike = false;
+      S.combo++; S.chain++; S.crits++;
+      // 확정 선제 사격은 방향 숙련 통계에서 제외하고 학습 눈금만 남긴다.
+      shotRecord = { u:BODY[0].w/2, kind:'head' };
+    } else {
+      part = partAt(S.cursor);
+      weak = !!part && weakAt(S.cursor);
+      near = !!part && nearWeakAt(S.cursor);
+      mult = weak ? weakMult()
+        : part && part.id === 'head' ? headMult()
+        : near ? nearWeakMult(part)
+        : bodyMult(part);
+      // 머리와 숨은 치명점은 연속·연쇄를 쌓고, 허공만 끊는다.
+      if(weak || (part && part.id === 'head')){ S.combo++; S.chain++; S.crits++; }
+      else if(!part){
+        // 몸 창 가장자리를 스친 빗나감은 연쇄를 끊지 않는다 — 쌓이지도 않는다.
+        // 머리가 몸 창의 끝이라, 같은 20ms 실수가 한쪽은 어깨(x1.5)
+        // 반대쪽은 연쇄 전체 소멸이 되는 비대칭을 여기서 눅인다.
+        const w = bodyW(), m = headW() * 0.6;
+        const dL = (S.bodyX - w/2) - S.cursor, dR = S.cursor - (S.bodyX + w/2);
+        graze = (dL > 0 && dL < m) || (dR > 0 && dR < m);
+          if(!graze){ S.combo = 0; S.chain = 0; }
+        }
+      shotRecord = recordAimedShot(part, weak, near, bodyUAt(S.cursor));
+    }
+    S.shots++;
+    if(duelTelemetry){
+      duelTelemetry.aimedShots++;
+      if(part) duelTelemetry.aimedHits++;
+    }
+    S.bestCombo = Math.max(S.bestCombo, S.combo);
+    S.bestChain = Math.max(S.bestChain, S.chain);
+
+    const ds = S.doctrineStats[S.doctrine];
+    const critical = weak || (part && part.id === 'head');
+    if(focusing && critical && S.doctrine === 'precision'){
+      ds.focusCrits++;
+      S.focus = Math.min(focusMax(), S.focus + 0.08);
+    }
+    const baseDamage = dmgPerShot() * mult;
+    if(S.doctrine === 'duelist')
+      ds.comboBonus += Math.max(0, baseDamage * (comboMul() - comboMulAt(0.08)));
+    bang(baseDamage * comboMul(), part, sure, graze, weak, false, shotRecord, near);
+
+    S.ammo--; S.cylTarget++; S.recoil = 1;
+    S.cool = shotGap();
+    if(weak || (part && part.id === 'head')) S.flash = 1;
+    if(S.ammo <= 0) startReload();
+  }
+
+  // 패닝 — 격발을 누르고 있으면 왼손으로 공이치기를 연타한다.
+  // 부위는 무작위(몸 창 밖으로도 샌다). 연속·연쇄를 쌓지도, 끊지도 않는다.
+  // 아머 벗기기와 몸통 깎기용 — 머리 창을 노릴 수 없는 상대에 대한 답이다.
+  const FAN_SPILL = 0.15;   // 몸 창 양옆으로 새는 폭 (몸 창 대비 비율)
+  function fanShot(){
+    if(S.phase !== 'fight' || S.reload > 0) return;
+    if(S.ammo <= 0){ startReload(); fanning = false; holdArmed = false; return; }
+    const u = -FAN_SPILL + Math.random() * (1 + FAN_SPILL*2);
+    let part = null;
+    if(u >= 0 && u <= 1){
+      let a = 0;
+      for(const p of BODY){ a += p.w; if(u <= a){ part = p; break; } }
+      if(!part) part = BODY[BODY.length-1];
+    }
+    S.fanShots++;
+    if(duelTelemetry){
+      duelTelemetry.fanShots++;
+      if(part) duelTelemetry.aimedHits++;
+    }
+    // 콤보 배율 없음 — 패닝은 물량이지 정밀이 아니다
+    bang(dmgPerShot() * bodyMult(part), part, false, false, false, true);
+    S.ammo--; S.cylTarget++;
+    S.cool = fanGap();
+    if(S.ammo <= 0){ startReload(); fanning = false; holdArmed = false; }
+  }
+
+  function bang(dmg, part, sure, graze, weak, fan, shotRecord, near){
+    const f0 = F(), m = muzzle(), f = foePos();
+    const head = !!part && part.id === 'head';
+    const critical = head || weak;
+    const dodged = !sure && !weak && f0.dodge > 0 && Math.random() < f0.dodge;
+
+    // 방탄 조끼는 머리와 소문으로 알아낸 치명점을 막지 못한다
+    if(!critical) dmg *= f0.bodyRes;
+
+    const spread = part ? f.h*0.12 : f.h*0.55;
+    const tx = f.x + (Math.random()-0.5)*spread;
+    // 맞은 부위의 높이에 그대로 탄착한다
+    const ty = part
+      ? f.foot - f.h*(part.y + (Math.random()-0.5)*0.06)
+      : f.foot - f.h*(0.50 + Math.random()*0.55);
+
+    tracers.push({ x0:m.x, y0:m.y, x1:tx, y1:ty, t:0, max:0.055, c:'#f5dfa2' });
+    S.recoil = fan ? 0.7 : 1;
+    fan ? sfxFan() : sfxShot(critical);
+
+    if(!part){
+      // 빗나간 총알은 피해를 주지 않는다 — 콤보가 끊기는 것으로 충분하다
+      texts.push({ x:tx, y:ty, t:0, s:graze
+        ? localText(bilingual('스침','GRAZE'))
+        : localText(bilingual('빗나감','MISS')), c:'#7f8c96' });
+      S.shake = 1.2;
+      for(let i=0;i<7;i++){
+        const a = -Math.PI*(0.12 + Math.random()*0.76), sp = 28 + Math.random()*74;
+        parts.push({ x:tx, y:ty, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+          t:0, max:0.4+Math.random()*0.45, r:1+Math.random()*1.8, c:'#6d5b43' });
+      }
+      return;
+    }
+    if(dodged){
+      texts.push({ x:tx, y:ty, t:0, s:localText(bilingual('흘렸다','EVADED')), c:'#7f8c96' });
+      S.shake = 1;
+      return;
+    }
+    if(S.foeArmor > 0){
+      const beforeArmor = S.foeArmor;
+      const armorDamage = fan && S.doctrine === 'suppressor' ? 2 : 1;
+      S.foeArmor = Math.max(0, S.foeArmor - armorDamage);
+      if(fan) S.doctrineStats[S.doctrine].fanArmor += beforeArmor - S.foeArmor;
+      const broken = S.foeArmor <= 0;
+      texts.push({ x:tx, y:ty, t:0, s:broken
+        ? localText(bilingual('코트 파괴','COAT BROKEN'))
+        : localText(bilingual('완전 방어','BLOCKED')), c:'#9fb0bd' });
+      if(shotRecord) addShotMark(shotRecord.u, 'armor');
+      S.shake = broken ? 7 : 3; sfxArmor();
+      if(broken) msg(localText(bilingual('상대의 코트를 벗겼다 — 이제 피해가 들어간다','Enemy coat stripped — shots will now deal damage')), 1.2);
+      return;
+    }
+
+    const hpBefore = S.foeHp;
+    S.foeHp -= dmg;
+    addPartDamage(part, Math.min(hpBefore, dmg));
+    S.shake = weak ? 12 : head ? 8 : 2 + part.mult*1.4;
+
+    const col = part.col;
+    const freshWeak = weak ? discoverWeakPoint() : false;
+    const pre = weak ? `${localText(bilingual('치명점','VITAL'))} · ${localText(f0.weak.name)} `
+      : near ? `${localText(bilingual('상처 스침','WOUND GRAZE'))} · ${localText(part.name)} `
+      : (!head && f0.bodyRes < 1) ? `${localText(bilingual('조끼 경감','VEST REDUCED'))} · ${localText(part.name)} `
+      : localText(part.name) + ' ';
+    texts.push({ x:tx, y:ty, t:0, s:pre+fmt(dmg), c:col });
+    if(shotRecord) addShotMark(shotRecord.u, shotRecord.kind);
+    if(freshWeak) msg(currentLanguage === 'ko'
+      ? `알아냈다 — ${foeDisplayName(f0)}의 치명점은 ${localText(f0.weak.name)}`
+      : `Discovered — ${foeDisplayName(f0)}’s vital point is ${localText(f0.weak.name)}`, 2.4);
+
+    // 몸 부위는 낮은 피해 대신 전투 시간을 벌거나 안정 피해를 남긴다.
+    if(!head && !weak && part.id === 'shldr'){
+      const suppression = S.doctrine === 'suppressor' ? 0.32 : 0.18;
+      S.foeAim = Math.max(0, S.foeAim - suppression);
+      S.doctrineStats[S.doctrine].suppressMs += suppression * S.aimDur * 1000;
+      addControl(part);
+      texts.push({ x:tx, y:ty-16, t:0, s:localText(bilingual('조준 제압','AIM SUPPRESSED')), c:'#e0a93c' });
+    } else if(!head && !weak && part.id === 'legs'){
+      const delay = S.doctrine === 'suppressor' ? 1.28 : 1.15;
+      S.aimDur = Math.min(foeAimT()*1.65, S.aimDur*delay);
+      S.doctrineStats[S.doctrine].legDelays++;
+      addControl(part);
+      texts.push({ x:tx, y:ty-16, t:0, s:localText(bilingual('다음 발 지연','NEXT SHOT DELAYED')), c:'#e0a93c' });
+    } else if(!head && !weak && part.id === 'belly'){
+      S.bleed += dmg * 0.35;
+      S.bleedT = Math.max(S.bleedT, 1.5);
+      addControl(part);
+      texts.push({ x:tx, y:ty-16, t:0, s:localText(bilingual('출혈','BLEEDING')), c:'#c1483a' });
+    }
+
+    const n = weak ? 28 : head ? 20 : 7 + Math.round(part.mult*2);
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2, sp = 25 + Math.random()*100;
+      parts.push({ x:tx, y:ty, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+        t:0, max:0.35+Math.random()*0.5, r:1+Math.random()*2.2,
+        c: Math.random()<0.35 ? col : '#6d5b43' });
+    }
+    if(S.foeHp <= 0) foeDown();
+    shopDirty = true;
+  }
+
+  function foeFire(){
+    const f0 = F(), m = foeMuzzle(), p = playerPos();
+    tracers.push({ x0:m.x, y0:m.y, x1:p.x + p.h*0.06, y1:p.foot - p.h*0.60,
+                   t:0, max:0.07, c:'#ffb9a0' });
+    S.foeRecoil = 1;
+    const heavy = f0.heavy > 0, exposed = S.reload > 0;
+    const px = playerPos().x, py = playerPos().foot - playerPos().h*0.62;
+    if(S.armor > 0){
+      if(duelTelemetry) duelTelemetry.armorBlocks++;
+      S.armor--;
+      S.shake = 5; sfxArmor();
+      texts.push({ x:px, y:py, t:0, s:S.armor
+        ? localText(bilingual('코트가 막았다','COAT BLOCKED'))
+        : localText(bilingual('코트 소진','COAT SPENT')), c:'#c9a173' });
+      if(S.armor <= 0) msg(localText(bilingual('가죽 코트가 모두 찢어졌다','Your leather coat is torn to pieces')), 1.2);
+      resetFoeAim();
+      return;
+    }
+    const mult = (heavy ? 2 : 1) * (exposed ? 1.5 : 1);
+    const hurt = Math.floor(foeDmg() * mult);
+    if(duelTelemetry) duelTelemetry.damageTaken += hurt;
+    S.hp -= hurt;
+    S.red = 1; S.shake = 8 + mult*4; S.combo = 0;
+    sfxHit();
+    texts.push({ x:px, y:py, t:0, s:'-'+fmt(hurt), c:'#c1483a' });
+    if(heavy && exposed) msg(localText(bilingual('대구경에 무방비로 맞았다 — 세 배','Caught exposed by a large-caliber shot — triple damage')));
+    else if(exposed)     msg(localText(bilingual('재장전 중에 맞았다 — 한 배 반','Hit while reloading — 1.5x damage')));
+    else if(heavy)       msg(localText(bilingual('대구경 — 두 배','Large caliber — double damage')));
+    if(S.hp <= 0){ S.hp = 0; playerDown(); } else resetFoeAim();
+  }
+
+  function foeDown(){
+    const f0 = F();
+    telemetryEvent('duel_end', duelTelemetryPayload('win'), S.stage);
+    ensureCombatStats();
+    S.doctrineStats[S.doctrine].wins++;
+    S.posStats[targetZone()].wins++;
+    const g = Math.floor(clearGold(S.stage) * (f0.boss ? 3 : 1) * chainMul());
+    const secured = Math.floor(g * 0.5), carried = g - secured;
+    S.expedition.securedGold += secured;
+    S.expedition.carriedGold += carried;
+    S.expedition.kills++;
+    S.kills++;
+    if(revealIntel(S.stage + 1)) S.pendingRumor = rumorFor(S.stage + 1);
+    S.phase = 'down'; S.pt = 1.4; S.fall = 0;
+    msg(currentLanguage === 'ko'
+      ? `쓰러졌다 — 현상금 +${fmt(g)} · 확보 ${fmt(secured)} / 미정산 ${fmt(carried)}${S.chain>1?`  (연쇄 ${S.chain} · x${chainMul().toFixed(2)})`:''}`
+      : `Enemy down — bounty +${fmt(g)} · secured ${fmt(secured)} / carried ${fmt(carried)}${S.chain>1?`  (chain ${S.chain} · x${chainMul().toFixed(2)})`:''}`);
+    shopDirty = true;
+  }
+
+  function enterBetween(win){
+    S.phase = 'between';
+    S.betweenWin = win;
+    S.bLock = 0.6;          // 교전 중의 연타가 그대로 넘겨버리지 않게
+  }
+
+  function playerDown(){
+    const duelSummary = duelTelemetryPayload('loss');
+    telemetryEvent('duel_end', duelSummary, S.stage);
+    telemetryEvent('player_death', {
+      doctrine:S.doctrine,
+      duration_ms:duelSummary.duration_ms,
+      enemy_hp:duelSummary.enemy_hp,
+      trait_ids:duelSummary.trait_ids
+    }, S.stage);
+    ensureCombatStats();
+    S.doctrineStats[S.doctrine].deaths++;
+    S.posStats[targetZone()].losses++;
+    S.deaths++;
+    S.deathStage = S.stage;
+    S.phase = 'beaten'; S.pt = 2.2;
+    const focusLeft = S.doctrine === 'precision'
+      ? currentLanguage === 'ko'
+        ? `\n집중 ${focusUsesLeft()}회 · ${S.focus.toFixed(2)}초 남음`
+        : `\nFocus ${focusUsesLeft()} uses · ${S.focus.toFixed(2)}s left`
+      : '';
+    msg(currentLanguage === 'ko'
+      ? `제 ${S.stage} 결투에서 끝났다\n연쇄 ${S.chain} 소멸${focusLeft}`
+      : `Your run ended at Duel ${S.stage}\nChain ${S.chain} lost${focusLeft}`, 2.2);
+    finishExpedition(false, true);
+  }
+
+  /* ───── loop ───── */
+  function update(dt){
+    focusing = (focusPtrHeld || focusKeyHeld) && canFocus();
+    if(focusing && !focusWasActive) S.focusActivations++;
+    focusWasActive = focusing;
+    if(focusing){
+      if(duelTelemetry) duelTelemetry.focusMs += dt * 1000;
+      S.focus = Math.max(0, S.focus - dt);
+      if(S.focus <= 0) focusing = false;
+    }
+    if(S.firstStrike){
+      // 판정상 머리 확정인 상태를 커서에도 그대로 보여준다.
+      S.cursor = headCenter();
+    } else {
+      const cursorMul = focusing ? focusSpeed() : 1;
+      S.cursor += S.dir * dt * cursorMul / sweepT();
+      if(S.cursor > 1){ S.cursor = 1; S.dir = -1; }
+      if(S.cursor < 0){ S.cursor = 0; S.dir = 1; }
+    }
+
+    if(S.phase === 'standoff'){
+      S.pt -= dt;
+      if(S.pt <= 0){
+        lockDoctrine();
+        if(isRewind()) rewindStart();
+        else { S.phase = 'draw'; S.drawAt = performance.now(); sfxDraw(); }
+      }
+    } else if(S.phase === 'draw'){
+      const el = (performance.now() - S.drawAt) / 1000;
+      if(el > foeDrawT() + 0.55) resolveDraw(true);
+    } else if(S.phase === 'fight'){
+      if(S.bleed > 0 && S.bleedT > 0){
+        const tick = Math.min(S.bleed, S.bleed * dt / Math.max(dt, S.bleedT));
+        S.bleed -= tick; S.bleedT = Math.max(0, S.bleedT - dt);
+        S.foeHp -= tick;
+        addPartDamage(BODY.find(p=>p.id==='belly'), tick);
+        if(S.foeHp <= 0){ S.bleed = 0; S.bleedT = 0; foeDown(); }
+      }
+      if(S.phase !== 'fight') return;
+      if(S.reload > 0){
+        S.reload -= dt;
+        const prog = Math.min(1, 1 - S.reload / reloadT());
+        S.ammo = Math.min(capacity(), S.ammoStart + Math.floor(prog * S.reloadLoad));
+        if(S.reload <= 0){
+          S.reload = 0;
+          S.ammo = Math.min(capacity(), S.ammoStart + S.reloadLoad);
+          S.reloadLoad = 0;
+          sfxReload();
+        }
+      } else if(S.cool > 0){
+        S.cool -= dt; if(S.cool < 0) S.cool = 0;
+      }
+      // 교전 중 시작된 누름이 이어지고 있으면 패닝으로 넘어간다
+      if((ptrHeld || keyHeld) && holdArmed && S.reload <= 0){
+        holdT += dt;
+        if(holdT > 0.26){
+          fanning = true;
+          focusPtrHeld = false; focusKeyHeld = false; focusing = false;
+        }
+      } else {
+        holdT = 0; fanning = false;
+      }
+      if(fanning && S.cool <= 0) fanShot();
+      S.foeAim += dt / S.aimDur;
+      if(S.foeAim >= 1) foeFire();
+    } else if(S.phase === 'between'){
+      if(S.bLock > 0) S.bLock -= dt;      // 결투 사이에는 시간이 흐르지 않는다
+    } else {
+      S.pt -= dt;
+      if(S.phase === 'down') S.fall = Math.min(1, S.fall + dt*2.2);
+      if(S.pt <= 0){
+        if(S.phase === 'down'){
+          // 두목을 넘으면 그 자리가 거점이 된다
+          if(S.stage % 5 === 0){
+            S.checkpoint = Math.max(S.checkpoint, S.stage);
+            S.pendingMastery = currentLanguage === 'ko'
+              ? `두목 돌파 · 머리 x${headMult().toFixed(0)} · 몸 숙련 x${bodyMastery().toFixed(2)}`
+              : `Boss defeated · Head x${headMult().toFixed(0)} · Body mastery x${bodyMastery().toFixed(2)}`;
+          }
+          S.stage++;
+          S.bestStage = Math.max(S.bestStage, S.stage);
+          // 원정 중에는 모든 승리 뒤에 계속 추적할지 귀환할지 결정한다.
+          enterBetween(true);
+          save();
+        } else {
+          S.stage = S.checkpoint + 1;   // 마지막으로 넘긴 두목 다음부터
+          finishExpedition(false);
+        }
+      }
+    }
+
+    S.cylSpin += (S.cylTarget - S.cylSpin) * Math.min(1, dt*16);
+
+    for(let i=tracers.length-1;i>=0;i--){
+      tracers[i].t += dt;
+      if(tracers[i].t > tracers[i].max) tracers.splice(i,1);
+    }
+    for(let i=parts.length-1;i>=0;i--){
+      const p = parts[i]; p.t += dt;
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vx *= 0.94; p.vy *= 0.94; p.vy += 60*dt;
+      if(p.t > p.max) parts.splice(i,1);
+    }
+    for(let i=texts.length-1;i>=0;i--){
+      texts[i].t += dt;
+      if(texts[i].t > 0.85) texts.splice(i,1);
+    }
+    for(let i=shotMarks.length-1;i>=0;i--){
+      shotMarks[i].t += dt;
+      if(shotMarks[i].t > shotMarks[i].max) shotMarks.splice(i,1);
+    }
+
+    const wd = weeds[0];
+    if(wd.x < -0.1){
+      if(Math.random() < dt*0.10){
+        wd.x = 1.12; wd.r = 6 + Math.random()*7;
+        wd.sp = 0.10 + Math.random()*0.09;
+        wd.y = 0.60 + Math.random()*0.30;
+      }
+    } else {
+      wd.x -= wd.sp * dt; wd.rot -= wd.sp * dt * 14;
+    }
+
+    S.shake *= Math.pow(0.0012, dt);
+    S.flash = Math.max(0, S.flash - dt*3);
+    S.red = Math.max(0, S.red - dt*1.8);
+    S.recoil = Math.max(0, S.recoil - dt*6);
+    S.foeRecoil = Math.max(0, S.foeRecoil - dt*5);
+    S.zoneFlash = Math.max(0, S.zoneFlash - dt*2.6);
+    savedFlash = Math.max(0, savedFlash - dt*1.4);
+    if(wipeArm > 0){
+      wipeArm -= dt;
+      if(wipeArm <= 0){
+        $('wipeBtn').classList.remove('armed');
+        $('wipeBtn').textContent = ui('wipe');
+      }
+    }
+    if(msgT > 0) msgT -= dt;
+  }
+
+  /* ───── field render ───── */
+  function draw(){
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,W,H);
+    const sx = (Math.random()-0.5)*S.shake, sy = (Math.random()-0.5)*S.shake;
+    ctx.save(); ctx.translate(sx, sy);
+
+    drawBackdrop(); drawWeed();
+    drawFoe(); drawPlayer();
+
+    tracers.forEach(t => {
+      const e = t.t / t.max;
+      ctx.globalAlpha = 1 - e*e;
+      ctx.strokeStyle = t.c; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(t.x0, t.y0); ctx.lineTo(t.x1, t.y1); ctx.stroke();
+      ctx.globalAlpha = 1;
+    });
+    parts.forEach(p => {
+      ctx.globalAlpha = 1 - p.t/p.max;
+      ctx.fillStyle = p.c;
+      ctx.fillRect(p.x-p.r/2, p.y-p.r/2, p.r, p.r);
+    });
+    ctx.globalAlpha = 1;
+    texts.forEach(t => {
+      ctx.globalAlpha = 1 - t.t/0.85;
+      ctx.fillStyle = t.c;
+      ctx.font = '700 15px "IBM Plex Mono",monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(t.s, t.x, t.y - t.t*34);
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    drawFoeHp();
+    drawLife();
+    if(S.phase === 'standoff' || S.phase === 'draw') drawVignette();
+    if(S.red > 0){
+      ctx.fillStyle = `rgba(150,40,30,${S.red*0.34})`;
+      ctx.fillRect(0,0,W,H);
+    }
+  }
+
+  function drawBackdrop(){
+    if(!duelBackdropReady){
+      drawSky(); drawMesas(); drawGround();
+      return;
+    }
+
+    // cover 방식으로 채워 모바일에서도 캔버스가 비지 않게 하되,
+    // 원본의 결투용 중앙 구도는 계속 화면 중심에 둔다.
+    const srcRatio = duelBackdrop.naturalWidth / duelBackdrop.naturalHeight;
+    const dstRatio = W / H;
+    let sx = 0, sy = 0, sw = duelBackdrop.naturalWidth, sh = duelBackdrop.naturalHeight;
+    if(dstRatio > srcRatio){
+      sh = sw / dstRatio;
+      sy = (duelBackdrop.naturalHeight - sh) * 0.5;
+    } else {
+      sw = sh * dstRatio;
+      sx = (duelBackdrop.naturalWidth - sw) * 0.5;
+    }
+    ctx.drawImage(duelBackdrop, sx, sy, sw, sh, -20, -20, W+40, H+40);
+
+    // 기존 검갈색 UI와 실루엣이 한 화면으로 묶이도록 색과 가장자리를 누른다.
+    const dusk = ctx.createLinearGradient(0,0,0,H);
+    dusk.addColorStop(0,'rgba(28,18,14,.22)');
+    dusk.addColorStop(0.56,'rgba(38,22,12,.12)');
+    dusk.addColorStop(1,'rgba(20,13,9,.30)');
+    ctx.fillStyle = dusk; ctx.fillRect(-20,-20,W+40,H+40);
+
+    const edge = ctx.createRadialGradient(W*.52,H*.47,H*.18,W*.52,H*.47,Math.max(W,H)*.72);
+    edge.addColorStop(0,'rgba(0,0,0,0)');
+    edge.addColorStop(1,'rgba(8,6,4,.34)');
+    ctx.fillStyle = edge; ctx.fillRect(-20,-20,W+40,H+40);
+  }
+
+  function drawSky(){
+    const hz = horizon();
+    const g = ctx.createLinearGradient(0,0,0,hz);
+    g.addColorStop(0,'#2b1d16');
+    g.addColorStop(0.55,'#7d4526');
+    g.addColorStop(1,'#d8913c');
+    ctx.fillStyle = g; ctx.fillRect(-20,-20,W+40,hz+20);
+    ctx.fillStyle = 'rgba(255,224,150,.55)';
+    ctx.beginPath(); ctx.arc(W*0.60, hz - H*0.06, H*0.085, 0, Math.PI*2); ctx.fill();
+  }
+
+  function drawMesas(){
+    const hz = horizon();
+    ctx.fillStyle = '#3b2419';
+    [[0.02,0.30,0.11],[0.30,0.20,0.075],[0.82,0.34,0.10]].forEach(([a,w,h])=>{
+      const x = W*a, ww = W*w, hh = H*h;
+      ctx.beginPath();
+      ctx.moveTo(x, hz);
+      ctx.lineTo(x + ww*0.18, hz - hh);
+      ctx.lineTo(x + ww*0.82, hz - hh*0.92);
+      ctx.lineTo(x + ww, hz);
+      ctx.closePath(); ctx.fill();
+    });
+  }
+
+  function drawGround(){
+    const hz = horizon();
+    const g = ctx.createLinearGradient(0,hz,0,H);
+    g.addColorStop(0,'#8a6440');
+    g.addColorStop(1,'#3a2818');
+    ctx.fillStyle = g; ctx.fillRect(-20,hz,W+40,H-hz+20);
+    ctx.strokeStyle = 'rgba(40,26,16,.30)'; ctx.lineWidth = 1;
+    for(let i=0;i<16;i++){
+      const y = hz + Math.pow(i/16,1.7)*(H-hz);
+      const len = 20 + i*14, x = (i*137) % W;
+      ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+len,y); ctx.stroke();
+    }
+  }
+
+  function drawWeed(){
+    const wd = weeds[0];
+    if(wd.x < -0.1 || wd.x > 1.2) return;
+    const hz = horizon();
+    const x = wd.x * W, y = hz + wd.y*(H-hz);
+    ctx.save(); ctx.translate(x,y); ctx.rotate(wd.rot);
+    ctx.strokeStyle = '#5a412a'; ctx.lineWidth = 1.6;
+    for(let i=0;i<7;i++){
+      const a = i*Math.PI/3.5;
+      ctx.beginPath(); ctx.moveTo(0,0);
+      ctx.lineTo(Math.cos(a)*wd.r, Math.sin(a)*wd.r); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0,0,wd.r*0.62,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGunman(x, foot, h, col, facing, armT, gunGlow){
+    ctx.save(); ctx.translate(x, foot); ctx.scale(facing, 1);
+    ctx.fillStyle = col;
+    ctx.fillRect(-h*0.10, -h*0.42, h*0.062, h*0.42);
+    ctx.fillRect( h*0.038, -h*0.42, h*0.062, h*0.42);
+    ctx.fillRect(-h*0.115, -h*0.045, h*0.10, h*0.045);
+    ctx.fillRect( h*0.030, -h*0.045, h*0.10, h*0.045);
+    ctx.beginPath();
+    ctx.moveTo(-h*0.135, -h*0.78);
+    ctx.lineTo( h*0.135, -h*0.78);
+    ctx.lineTo( h*0.160, -h*0.30);
+    ctx.lineTo(-h*0.160, -h*0.30);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, -h*0.875, h*0.078, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(0, -h*0.935, h*0.175, h*0.028, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillRect(-h*0.062, -h*1.020, h*0.124, h*0.090);
+
+    const ang = -Math.PI*0.42 + armT * Math.PI*0.42;
+    const sx0 = h*0.095, sy0 = -h*0.745, L = h*0.26;
+    const hx = sx0 + Math.cos(ang)*L, hy = sy0 + Math.sin(ang)*L;
+    ctx.strokeStyle = col; ctx.lineWidth = h*0.048; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.save();
+    ctx.translate(hx, hy); ctx.rotate(ang);
+    ctx.fillRect(0, -h*0.016, h*0.11, h*0.032);
+    ctx.fillRect(h*0.01, 0, h*0.026, h*0.048);
+    ctx.restore();
+
+    if(gunGlow > 0.35){
+      const gx = hx + Math.cos(ang)*h*0.12, gy = hy + Math.sin(ang)*h*0.12;
+      ctx.globalAlpha = gunGlow; ctx.fillStyle = '#ffe9a8';
+      ctx.beginPath();
+      for(let i=0;i<8;i++){
+        const a = ang + i*Math.PI/4, r = i%2 ? h*0.03 : h*0.085;
+        const px = gx + Math.cos(a)*r, py = gy + Math.sin(a)*r;
+        i ? ctx.lineTo(px,py) : ctx.moveTo(px,py);
+      }
+      ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer(){
+    const p = playerPos();
+    const holstered = (S.phase === 'standoff' && !isRewind());
+    drawGunman(p.x, p.foot, p.h, '#14100c', 1, holstered ? 0 : 1, S.recoil);
+  }
+
+  function drawFoe(){
+    const f = foePos(), col = F().boss ? '#3a2410' : '#2c1f16';
+    const lost   = S.phase === 'beaten' || (S.phase === 'between' && !S.betweenWin);
+    const fallen = S.phase === 'down'    || (S.phase === 'between' &&  S.betweenWin);
+    if(lost){
+      drawGunman(f.x, f.foot, f.h, col, -1, 0.15, 0);
+      return;
+    }
+    if(fallen){
+      ctx.save();
+      ctx.translate(f.x, f.foot);
+      ctx.rotate(-S.fall * Math.PI*0.48);
+      ctx.globalAlpha = 1 - S.fall*0.25;
+      drawGunman(0, 0, f.h, col, -1, 0.2, 0);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+    const holstered = (S.phase === 'standoff' || S.phase === 'draw');
+    const armT = holstered ? 0 : Math.min(1, S.foeAim / 0.62);
+    drawGunman(f.x, f.foot, f.h, col, -1, armT, S.foeRecoil);
+
+    if(S.flash > 0){
+      ctx.globalAlpha = S.flash*0.45;
+      ctx.fillStyle = '#e8d9b4';
+      ctx.beginPath();
+      ctx.ellipse(f.x, f.foot - f.h*0.55, f.h*0.30, f.h*0.55, 0, 0, Math.PI*2);
+      ctx.fill(); ctx.globalAlpha = 1;
+    }
+    if(!holstered && S.foeAim > 0.80){
+      const m = foeMuzzle();
+      ctx.globalAlpha = (S.foeAim-0.80)/0.20;
+      ctx.fillStyle = '#ff5a3c';
+      ctx.beginPath(); ctx.arc(m.x, m.y, 3.2 + F().heavy*1.8, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawFoeHp(){
+    const f = foePos();
+    const w = Math.min(200, W*0.34), x = f.x - w/2, y = f.foot - f.h*1.32;
+    const ratio = Math.max(0, S.foeHp / S.foeMaxHp);
+    ctx.fillStyle = 'rgba(10,8,6,.7)'; ctx.fillRect(x, y, w, 8);
+    ctx.fillStyle = ratio > 0.5 ? '#c9a173' : ratio > 0.2 ? '#e0a93c' : '#c1483a';
+    ctx.fillRect(x, y, w*ratio, 8);
+    ctx.strokeStyle = 'rgba(230,220,196,.35)'; ctx.lineWidth = 1;
+    ctx.strokeRect(x+.5, y+.5, w-1, 7);
+    ctx.fillStyle = '#e6dcc4'; ctx.font = '700 10px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${fmt(Math.max(0,S.foeHp))} / ${fmt(S.foeMaxHp)}`, f.x, y - 4);
+    if(F().armor > 0){
+      ctx.textAlign = 'left';
+      drawArmor(x + w + 6, y + 4, F().armor, S.foeArmor, 1);
+    }
+    if(S.phase === 'fight'){
+      const ay = y + 11;
+      ctx.fillStyle = 'rgba(10,8,6,.6)'; ctx.fillRect(x, ay, w, 3);
+      ctx.fillStyle = S.foeAim > 0.8 ? '#ff5a3c' : 'rgba(230,220,196,.5)';
+      ctx.fillRect(x, ay, w*Math.min(1,S.foeAim), 3);
+    }
+  }
+
+  // 적과 완전히 같은 형태의 체력바 — 규칙이 같다는 걸 화면으로 보여준다
+  function drawLife(){
+    const w = Math.min(200, W*0.34), x = 12, y = 22;
+    const r = Math.max(0, S.hp / Math.max(1, maxHp()));
+    ctx.fillStyle = 'rgba(10,8,6,.7)'; ctx.fillRect(x, y, w, 8);
+    ctx.fillStyle = r > 0.5 ? '#c9a173' : r > 0.2 ? '#e0a93c' : '#c1483a';
+    ctx.fillRect(x, y, w*r, 8);
+    ctx.strokeStyle = 'rgba(230,220,196,.35)'; ctx.lineWidth = 1;
+    ctx.strokeRect(x+.5, y+.5, w-1, 7);
+    ctx.font = '700 10px "IBM Plex Mono",monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#e6dcc4';
+    ctx.fillText(`${fmt(Math.max(0,S.hp))} / ${fmt(maxHp())}`, x, y - 4);
+    drawArmor(x, y + 13, armorMax(), S.armor, 1);
+  }
+
+  // 코트 잔량 — 남은 건 채워진 방패, 쓴 건 빈 테두리
+  function drawArmor(x, y, total, left, dir){
+    for(let i=0;i<total;i++){
+      const px = x + dir*i*11;
+      ctx.beginPath();
+      ctx.moveTo(px, y-4); ctx.lineTo(px+7, y-4);
+      ctx.lineTo(px+7, y+1); ctx.lineTo(px+3.5, y+5); ctx.lineTo(px, y+1);
+      ctx.closePath();
+      if(i < left){ ctx.fillStyle = '#9fb0bd'; ctx.fill(); }
+      else { ctx.strokeStyle = 'rgba(159,176,189,.35)'; ctx.lineWidth = 1; ctx.stroke(); }
+    }
+  }
+
+  function drawVignette(){
+    const g = ctx.createRadialGradient(W*0.5,H*0.45,H*0.18,W*0.5,H*0.45,H*0.95);
+    g.addColorStop(0,'rgba(0,0,0,0)');
+    g.addColorStop(1,'rgba(0,0,0,.72)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  }
+
+  /* ───── cylinder render ───── */
+  function drawCylinder(){
+    const cap = capacity(), R = CW*0.5, cxp = R, cyp = R;
+    cx2.setTransform(DPR,0,0,DPR,0,0);
+    cx2.clearRect(0,0,CW,CW);
+    cx2.beginPath(); cx2.arc(cxp, cyp, R*0.90, 0, Math.PI*2);
+    cx2.fillStyle = '#241c15'; cx2.fill();
+    cx2.strokeStyle = S.reload > 0 ? '#e0a93c' : '#453424';
+    cx2.lineWidth = 2; cx2.stroke();
+
+    const step = Math.PI*2/cap, cr = R*0.145;
+    for(let k=0;k<cap;k++){
+      const a = -Math.PI/2 + (k - S.cylSpin)*step;
+      const px = cxp + Math.cos(a)*R*0.56, py = cyp + Math.sin(a)*R*0.56;
+      cx2.beginPath(); cx2.arc(px, py, cr, 0, Math.PI*2);
+      if(k >= (cap - S.ammo)){
+        cx2.fillStyle = '#e0a93c'; cx2.fill();
+        cx2.beginPath(); cx2.arc(px, py, cr*0.42, 0, Math.PI*2);
+        cx2.fillStyle = '#8a6a20'; cx2.fill();
+      } else {
+        cx2.fillStyle = '#100d09'; cx2.fill();
+        cx2.strokeStyle = '#3a2c1e'; cx2.lineWidth = 1; cx2.stroke();
+      }
+    }
+    cx2.beginPath(); cx2.arc(cxp, cyp, R*0.16, 0, Math.PI*2);
+    cx2.fillStyle = '#5c4526'; cx2.fill();
+    cx2.fillStyle = '#e6dcc4';
+    cx2.fillRect(cxp-1, cyp - R*0.90, 2, R*0.13);
+  }
+
+  /* ───── DOM sync ───── */
+  function syncDom(){
+    $('gold').textContent = fmt(S.gold);
+    $('stageNo').textContent =
+      (S.phase === 'between' && !S.betweenWin) ? S.deathStage : S.stage;
+    $('foeName').textContent = foeDisplayName(F());
+
+    const et = $('expeditionTxt');
+    if(S.expedition.active){
+      et.textContent = currentLanguage === 'ko'
+        ? `원정 ${S.expedition.kills}명 · 확보 ${fmt(S.expedition.securedGold)} · 미정산 ${fmt(S.expedition.carriedGold)}`
+        : `Hunt ${S.expedition.kills} · secured ${fmt(S.expedition.securedGold)} · carried ${fmt(S.expedition.carriedGold)}`;
+      et.className = 'st';
+    } else {
+      et.textContent = localText(bilingual('마을 · 원정 준비','Town · ready to ride'));
+      et.className = 'st cold';
+    }
+
+    const st = $('chainTxt');
+    st.textContent = S.chain > 0
+      ? currentLanguage === 'ko'
+        ? `연쇄 ${S.chain} · 현상금 x${chainMul().toFixed(2)}`
+        : `Chain ${S.chain} · Bounty x${chainMul().toFixed(2)}`
+      : localText(bilingual('연쇄 0','Chain 0'));
+    st.className = 'st' + (S.chain > 0 ? '' : ' cold');
+    $('runTxt').textContent = currentLanguage === 'ko'
+      ? `사망 ${S.deaths} · ${clock(S.playMs)}`
+      : `Deaths ${S.deaths} · ${clock(S.playMs)}`;
+
+    const sil = $('silh'), w = bodyW();
+    const weakKnown = !!S.intel[F().stage], weakFound = !!S.discovered[F().stage];
+    const nextSilKey = `${currentLanguage}|${w.toFixed(3)}|${S.bodyX.toFixed(3)}|${F().stage}|${weakKnown?1:0}|${weakFound?1:0}`;
+    if(silKey !== nextSilKey){
+      silKey = nextSilKey;
+      const px = $('gauge').clientWidth || 600;
+      sil.innerHTML = BODY.map(p => {
+        const segPx = px * w * p.w;
+        const alpha = 0.10 + Math.min(0.42, p.mult * 0.075);
+        return `<span class="seg ${p.id}" style="flex:0 0 ${(p.w*100).toFixed(2)}%;`+
+               `background:${p.col}${Math.round(alpha*255).toString(16).padStart(2,'0')}">`+
+               `${segPx > 30 ? `<i>${localText(p.name)}</i>` : ''}</span>`;
+      }).join('') + (weakKnown && F().weak
+        ? `<span class="weak-mark ${weakFound?'found':''}" title="${localText(F().weak.name)}" `+
+          `style="left:${(F().weak.start*100).toFixed(2)}%;width:${(F().weak.width*100).toFixed(2)}%"></span>`
+        : '');
+    }
+    sil.style.left = ((S.bodyX - w/2)*100)+'%';
+    sil.style.width = (w*100)+'%';
+    sil.className = 'silh' + (F().bodyRes < 1 ? ' armored' : '');
+    sil.style.boxShadow = S.zoneFlash > 0
+      ? `0 0 ${(S.zoneFlash*26).toFixed(0)}px rgba(230,220,196,${(S.zoneFlash*0.4).toFixed(2)})` : 'none';
+    $('shotMarks').innerHTML = shotMarks.map(m => {
+      const x = S.bodyX - w/2 + m.u*w;
+      const alpha = Math.max(0, 1 - m.t/m.max);
+      return `<span class="shot-mark ${m.kind}" style="left:${(x*100).toFixed(3)}%;opacity:${alpha.toFixed(2)}"></span>`;
+    }).join('');
+    $('nock').style.left = (S.cursor*100)+'%';
+    const focusRatio = S.doctrine !== 'precision' ? 0
+      : Math.max(0, Math.min(1, S.focus / Math.max(0.01, focusMax())));
+    $('focusFill').style.transform = `scaleX(${focusRatio})`;
+    $('focusTrack').classList.toggle('on', focusing);
+
+    const v = $('veil');
+    v.style.opacity = S.reload > 0 ? 1 : 0;
+    v.style.transform = `scaleX(${S.reload > 0 ? S.reload/reloadT() : 0})`;
+
+    const al = $('aimLabel');
+    if(focusing){
+      al.innerHTML = currentLanguage === 'ko'
+        ? `<b style="color:var(--brass)">집중</b> — 커서 ${focusPct()}% · 상대 조준은 계속된다`
+        : `<b style="color:var(--brass)">FOCUS</b> — cursor ${focusPct()}% · enemy aim continues`;
+    } else if(fanning){
+      al.innerHTML = currentLanguage === 'ko'
+        ? `<b style="color:var(--brass)">패닝</b> — 부위 무작위 · 실린더 ${S.ammo}/${capacity()} · 예비 ${S.expedition.reserveAmmo}`
+        : `<b style="color:var(--brass)">FANNING</b> — random hit zone · cylinder ${S.ammo}/${capacity()} · reserve ${S.expedition.reserveAmmo}`;
+    } else {
+      const cp = partAt(S.cursor);
+      const weakHere = weakKnown && !!cp && weakAt(S.cursor);
+      const nearHere = weakKnown && !!cp && nearWeakAt(S.cursor);
+      const eff = weakHere ? weakMult()
+        : cp ? (cp.id==='head' ? headMult() : (nearHere ? nearWeakMult(cp) : bodyMult(cp)) * F().bodyRes)
+        : 0;
+      al.innerHTML = weakHere
+        ? `<b style="color:var(--blood)">${localText(bilingual('치명점','VITAL'))} · ${localText(F().weak.name)}</b> · x${eff.toFixed(2)} · ${S.ammo}/${capacity()} +${S.expedition.reserveAmmo}`
+        : nearHere
+        ? `<b style="color:var(--brass)">${localText(bilingual('상처 스침','WOUND GRAZE'))} · ${localText(cp.name)}</b> · x${eff.toFixed(2)} · ${S.ammo}/${capacity()} +${S.expedition.reserveAmmo}`
+        : cp
+        ? `<b style="color:${cp.col}">${localText(cp.name)}</b> · x${eff.toFixed(2)}`+
+          `${F().bodyRes<1 && cp.id!=='head' ? localText(bilingual(' (조끼)',' (vest)')) : ''} · ${S.ammo}/${capacity()} +${S.expedition.reserveAmmo}`
+        : `<span style="color:#7f8c96">${localText(bilingual('허공 · 피해 없음','Air · no damage'))}</span> · ${S.ammo}/${capacity()} +${S.expedition.reserveAmmo}`;
+    }
+    $('comboTxt').textContent = S.combo > 1
+      ? currentLanguage === 'ko'
+        ? `연속 급소 ${S.combo} → x${comboMul().toFixed(2)}`
+        : `Vital streak ${S.combo} → x${comboMul().toFixed(2)}`
+      : '';
+
+    const fb = $('fireBtn');
+    if(S.phase === 'between'){
+      fb.innerHTML = (S.expedition.active
+        ? localText(bilingual('계 속 추 적','K E E P  H U N T I N G'))
+        : localText(bilingual('원 정 출 발','R I D E  O U T')))
+        + ' &nbsp;<span style="font-size:12px;opacity:.6">SPACE</span>';
+      fb.classList.add('go');
+      fb.disabled = S.expedition.active && S.ammo + S.expedition.reserveAmmo <= 0;
+    } else {
+      fb.innerHTML = currentLanguage === 'ko'
+        ? '격 발 &nbsp;<span style="font-size:12px;opacity:.6">SPACE · 꾹 누르면 패닝</span>'
+        : 'F I R E &nbsp;<span style="font-size:12px;opacity:.6">SPACE · HOLD TO FAN</span>';
+      fb.classList.remove('go');
+      fb.disabled = false;
+    }
+
+    const rb = $('reloadBtn');
+    if(S.phase === 'between' && S.expedition.active){
+      rb.innerHTML = currentLanguage === 'ko'
+        ? '마을 귀환 <span style="font-size:11px;opacity:.6">R</span>'
+        : 'RETURN <span style="font-size:11px;opacity:.6">R</span>';
+      rb.classList.add('urgent');
+      rb.disabled = S.bLock > 0;
+    } else {
+      rb.innerHTML = `${ui('reload')} <span style="font-size:11px;opacity:.6">R</span>`;
+      rb.classList.toggle('urgent', S.phase === 'fight' && S.reload <= 0 && S.ammo <= Math.ceil(capacity()*0.34));
+      rb.disabled = S.reload > 0 || S.ammo >= capacity() || S.expedition.reserveAmmo <= 0 || S.phase !== 'fight';
+    }
+    const focusBtn = $('focusBtn');
+    focusBtn.classList.toggle('on', focusing);
+    focusBtn.disabled = S.doctrine !== 'precision' || S.phase !== 'fight' || S.reload > 0 || fanning || S.focus <= 0;
+    focusBtn.innerHTML = S.doctrine !== 'precision'
+      ? currentLanguage === 'ko'
+        ? '집 중 <span style="font-size:10px;opacity:.6">교리로 사용 불가</span>'
+        : 'F O C U S <span style="font-size:10px;opacity:.6">UNAVAILABLE</span>'
+      : `${ui('focus')} <span style="font-size:10px;opacity:.6">${focusUsesLeft()}${currentLanguage==='ko'?'회':' uses'} · ${S.focus.toFixed(2)}s · SHIFT</span>`;
+
+    const b = $('banner');
+    let txt = null, cls = '';
+    if(S.phase === 'standoff' && !isRewind()){ txt = '· · ·'; cls = 'quiet'; }
+    else if(S.phase === 'draw'){ txt = 'DRAW!'; cls = 'shout'; }
+    else if(S.phase === 'between'){
+      txt = S.expedition.active
+        ? currentLanguage === 'ko'
+          ? `원정 중 — 다음은 제 ${S.stage} 결투\n체력 ${fmt(S.hp)}/${fmt(maxHp())} · 탄약 ${S.ammo}+${S.expedition.reserveAmmo}${S.pendingMastery?`\n${S.pendingMastery}`:''}${S.pendingRumor?`\n소문 · ${S.pendingRumor}`:''}`
+          : `On the hunt — next is Duel ${S.stage}\nHealth ${fmt(S.hp)}/${fmt(maxHp())} · ammo ${S.ammo}+${S.expedition.reserveAmmo}${S.pendingMastery?`\n${S.pendingMastery}`:''}${S.pendingRumor?`\nRumor · ${S.pendingRumor}`:''}`
+        : currentLanguage === 'ko'
+          ? S.expeditionResult.outcome === 'defeated'
+            ? `제 ${S.deathStage} 결투에서 쓰러져 마을로 귀환\n확보 ${fmt(S.expeditionResult.banked)} · 분실 ${fmt(S.expeditionResult.lost)}`
+            : S.expeditionResult.outcome === 'returned'
+              ? `마을 귀환 — ${S.expeditionResult.kills}명 · 현상금 ${fmt(S.expeditionResult.banked)} 정산`
+              : `마을 — 장비를 정비하고 원정을 시작한다`
+          : S.expeditionResult.outcome === 'defeated'
+            ? `Fell at Duel ${S.deathStage} and returned to town\nSecured ${fmt(S.expeditionResult.banked)} · lost ${fmt(S.expeditionResult.lost)}`
+            : S.expeditionResult.outcome === 'returned'
+              ? `Back in town — ${S.expeditionResult.kills} targets · ${fmt(S.expeditionResult.banked)} banked`
+              : `Town — prepare your outfit and ride out`;
+      cls = 'note';
+    }
+    else if(msgT > 0){ txt = msgS; cls = 'note'; }
+    b.className = 'banner' + (txt ? ' on ' + cls : '');
+    if(txt && b.textContent !== txt) b.textContent = txt;
+
+    if(shopWasOpen !== shopOpen()){ shopWasOpen = shopOpen(); shopDirty = true; }
+    const ssx = $('shopState');
+    ssx.textContent = shopOpen()
+      ? localText(bilingual('마을 — 장비 정비 가능','TOWN — OUTFIT AVAILABLE'))
+      : localText(bilingual('원정 중 — 귀환 전까지 잠김','ON THE HUNT — LOCKED UNTIL RETURN'));
+    ssx.className = shopOpen() ? 'open' : 'shut';
+    if(chipsDirty){ renderChips(); chipsDirty = false; }
+    if(shopDirty){ renderShop(); shopDirty = false; }
+    renderDoctrines();
+    if(intelDirty) renderIntel();
+
+    const ss = $('saveState');
+    if(!CAN_LS && !(window.storage && window.storage.set)){
+      ss.textContent = localText(bilingual('이 브라우저에서는 저장할 수 없음','Saving unavailable in this browser'));
+      ss.style.color = 'var(--blood)';
+    } else {
+      const ago = lastSaveAt ? (performance.now() - lastSaveAt)/1000 : -1;
+      ss.textContent = ago < 0
+        ? localText(bilingual('자동 저장 대기','Waiting to autosave'))
+        : ago < 2.5
+          ? localText(bilingual('저장됨','Saved'))
+          : currentLanguage === 'ko'
+            ? `저장됨 · ${Math.floor(ago)}초 전`
+            : `Saved · ${Math.floor(ago)}s ago`;
+      ss.style.color = savedFlash > 0 ? 'var(--brass)' : '';
+    }
+
+    const acc = S.shots ? (S.crits/S.shots*100).toFixed(0) : '0';
+    const dirAcc = k => {
+      const d = S.dirStats[k];
+      return d.shots ? `${Math.round((d.head+d.weak)/d.shots*100)}%` : '—';
+    };
+    const partSummary = BODY.filter(p=>p.id!=='head').map(p => {
+      const s = S.partStats[p.id];
+      return currentLanguage === 'ko'
+        ? `${localText(p.name)} ${s.shots}발${s.control?`/${s.control}효과`:''}`
+        : `${localText(p.name)} ${s.shots} shots${s.control?`/${s.control} effects`:''}`;
+    }).join(' · ');
+    const doctrineStat = S.doctrineStats[S.doctrine];
+    const drawBonusText = [
+      S.doctrine === 'duelist'
+        ? localText(bilingual('교리 +60ms','Doctrine +60ms'))
+        : '',
+      S.lvl.hunch
+        ? currentLanguage === 'ko'
+          ? `예감 +${(hunchBonus()*1000).toFixed(0)}ms`
+          : `Hunch +${(hunchBonus()*1000).toFixed(0)}ms`
+        : ''
+    ].filter(Boolean).join(' · ');
+    const doctrineSummary = S.doctrine === 'precision'
+      ? localText(bilingual(`집중 급소 <b>${doctrineStat.focusCrits}</b>`,`Focused vitals <b>${doctrineStat.focusCrits}</b>`))
+      : S.doctrine === 'duelist'
+      ? localText(bilingual(`DRAW 확정타 <b>${doctrineStat.drawShots}</b> · 연속 급소 추가 피해 <b>${fmt(doctrineStat.comboBonus)}</b>`,`Guaranteed DRAW shots <b>${doctrineStat.drawShots}</b> · Vital-streak bonus damage <b>${fmt(doctrineStat.comboBonus)}</b>`))
+      : currentLanguage === 'ko'
+        ? `조준 지연 <b>${(doctrineStat.suppressMs/1000).toFixed(1)}초</b> · 다리 지연 <b>${doctrineStat.legDelays}</b> · 패닝 코트 <b>${doctrineStat.fanArmor}</b>`
+        : `Aim delay <b>${(doctrineStat.suppressMs/1000).toFixed(1)}s</b> · Leg delays <b>${doctrineStat.legDelays}</b> · Fanning armor <b>${doctrineStat.fanArmor}</b>`;
+    const partMultipliers = BODY.map(p =>
+      `${localText(p.name)} <b>x${(p.id==='head'?headMult():bodyMult(p)*F().bodyRes).toFixed(2)}</b>`
+    ).join(' · ');
+    $('stats').innerHTML = currentLanguage === 'ko'
+      ? `교리 <b>${localText(doctrine().name)}</b> · 승리 <b>${doctrineStat.wins}</b> · 사망 <b>${doctrineStat.deaths}</b> · ${doctrineSummary}<br>`+
+        `한 발 <b>${fmt(dmgPerShot())}</b> · ${partMultipliers} · 허공 <b>0</b><br>`+
+        `머리 창 <b>${(headW()*sweepT()*1000).toFixed(0)}ms</b> (몸 ${(bodyW()*100).toFixed(0)}% · 커서 ${sweepT().toFixed(2)}s) · 몸 숙련 <b>x${bodyMastery().toFixed(2)}</b> · 머리 <b>x${headMult().toFixed(0)}</b> · 치명점 <b>x${weakMult().toFixed(0)}</b><br>`+
+        `장탄 <b>${S.ammo}/${capacity()}</b> · 예비 <b>${S.expedition.reserveAmmo}/${reserveCapacity()}</b> · 연사 <b>${shotGap().toFixed(2)}s</b> · 패닝 <b>${fanGap().toFixed(2)}s</b> · 집중 <b>${S.doctrine==='precision'?focusUsesLeft()+'회 · '+focusPct()+'%':'교리로 사용 불가'}</b> · 재장전 <b>${reloadT().toFixed(2)}s</b><br>`+
+        `상대 조준 <b>${foeAimT().toFixed(2)}s</b>${F().jitter?' ±50%':''} · 뽑기 창 <b>${(foeDrawT()*1000).toFixed(0)}ms</b>${drawBonusText?` (${drawBonusText})`:''} · 내 체력 <b>${fmt(Math.max(0,S.hp))}/${fmt(maxHp())}</b>`+
+          `${armorMax()?` · 코트 <b>${S.armor}/${armorMax()}</b>`:''} · 상대 한 발 <b>${fmt(foeDmg())}</b>`+
+          `${F().armor?` · 상대 코트 <b>${S.foeArmor}/${F().armor}</b>`:''}<br>`+
+        `원정 <b>${S.expedition.active?S.expedition.kills+'명':'마을'}</b> · 확보 <b>${fmt(S.expedition.securedGold)}</b> · 미정산 <b>${fmt(S.expedition.carriedGold)}</b><br>`+
+        `최고 <b>제 ${S.bestStage} 결투</b> · 거점 <b>제 ${S.checkpoint||0} 두목</b> · 연쇄 <b>${S.chain}</b> (최고 ${S.bestChain}) · 처치 <b>${S.kills}</b><br>`+
+        `급소 명중률 <b>${acc}%</b> (조준 ${S.shots}발 · 패닝 ${S.fanShots}발 · 치명점 ${S.weakHits}발) · 최고 연속 <b>${S.bestCombo}</b>`+
+        (S.bestDraw ? ` · 최속 뽑기 <b>${(S.bestDraw*1000).toFixed(0)}ms</b>` : '')+`<br>`+
+        `방향별 급소 <b>→ ${dirAcc('right')} · ← ${dirAcc('left')}</b> · 집중 발동 <b>${S.focusActivations}회</b><br>`+
+        `몸 사격 · ${partSummary}`
+      : `Doctrine <b>${localText(doctrine().name)}</b> · Wins <b>${doctrineStat.wins}</b> · Deaths <b>${doctrineStat.deaths}</b> · ${doctrineSummary}<br>`+
+        `Damage <b>${fmt(dmgPerShot())}</b> · ${partMultipliers} · Air <b>0</b><br>`+
+        `Head window <b>${(headW()*sweepT()*1000).toFixed(0)}ms</b> (body ${(bodyW()*100).toFixed(0)}% · sweep ${sweepT().toFixed(2)}s) · Body mastery <b>x${bodyMastery().toFixed(2)}</b> · Head <b>x${headMult().toFixed(0)}</b> · Vital <b>x${weakMult().toFixed(0)}</b><br>`+
+        `Ammo <b>${S.ammo}/${capacity()}</b> · reserve <b>${S.expedition.reserveAmmo}/${reserveCapacity()}</b> · Fire <b>${shotGap().toFixed(2)}s</b> · Fan <b>${fanGap().toFixed(2)}s</b> · Focus <b>${S.doctrine==='precision'?focusUsesLeft()+' uses · '+focusPct()+'%':'unavailable'}</b> · Reload <b>${reloadT().toFixed(2)}s</b><br>`+
+        `Enemy aim <b>${foeAimT().toFixed(2)}s</b>${F().jitter?' ±50%':''} · Draw window <b>${(foeDrawT()*1000).toFixed(0)}ms</b>${drawBonusText?` (${drawBonusText})`:''} · Health <b>${fmt(Math.max(0,S.hp))}/${fmt(maxHp())}</b>`+
+          `${armorMax()?` · Coat <b>${S.armor}/${armorMax()}</b>`:''} · Enemy shot <b>${fmt(foeDmg())}</b>`+
+          `${F().armor?` · Enemy coat <b>${S.foeArmor}/${F().armor}</b>`:''}<br>`+
+        `Hunt <b>${S.expedition.active?S.expedition.kills+' targets':'town'}</b> · secured <b>${fmt(S.expedition.securedGold)}</b> · carried <b>${fmt(S.expedition.carriedGold)}</b><br>`+
+        `Best <b>Duel ${S.bestStage}</b> · Checkpoint <b>Boss ${S.checkpoint||0}</b> · Chain <b>${S.chain}</b> (best ${S.bestChain}) · Kills <b>${S.kills}</b><br>`+
+        `Vital accuracy <b>${acc}%</b> (aimed ${S.shots} · fanned ${S.fanShots} · discovered ${S.weakHits}) · Best streak <b>${S.bestCombo}</b>`+
+        (S.bestDraw ? ` · Fastest draw <b>${(S.bestDraw*1000).toFixed(0)}ms</b>` : '')+`<br>`+
+        `Directional vitals <b>→ ${dirAcc('right')} · ← ${dirAcc('left')}</b> · Focus activations <b>${S.focusActivations}</b><br>`+
+        `Body shots · ${partSummary}`;
+  }
+
+  /* ───── input ───── */
+  function trigger(e){
+    if(e) e.preventDefault();
+    wake();
+    focusing = (focusPtrHeld || focusKeyHeld) && canFocus();
+    if(S.phase === 'between'){
+      if(S.bLock <= 0){
+        lockDoctrine();
+        if(S.expedition.active){
+          if(S.ammo + S.expedition.reserveAmmo <= 0){
+            msg(localText(bilingual('탄약이 없다 — 마을로 귀환해야 한다','No ammunition — return to town')), 1.6);
+            return;
+          }
+        } else startExpedition();
+        newDuel();
+      }
+      return;
+    }
+    if(S.phase === 'standoff'){
+      lockDoctrine();
+      isRewind() ? rewindStart() : earlyDraw();
+      return;
+    }
+    if(S.phase === 'draw'){ resolveDraw(false); return; }
+    shoot();
+    if(!focusing) holdArmed = true;   // 집중 사격은 홀드 패닝으로 이어지지 않는다
+  }
+  const release = () => {
+    if(!ptrHeld && !keyHeld){ holdArmed = false; holdT = 0; fanning = false; }
+  };
+  $('gauge').addEventListener('pointerdown', e => { ptrHeld = true; trigger(e); });
+  $('fireBtn').addEventListener('pointerdown', e => { ptrHeld = true; trigger(e); });
+  cv.addEventListener('pointerdown', e => { ptrHeld = true; trigger(e); });
+  $('focusBtn').addEventListener('pointerdown', e => {
+    e.preventDefault(); wake();
+    if(canFocus()){ focusPtrHeld = true; focusing = true; }
+  });
+  window.addEventListener('pointerup',     () => { ptrHeld = false; focusPtrHeld = false; release(); });
+  window.addEventListener('pointercancel', () => { ptrHeld = false; focusPtrHeld = false; release(); });
+  $('reloadBtn').addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if(S.phase === 'between' && S.expedition.active) returnToTown();
+    else startReload();
+  });
+  window.addEventListener('keydown', e => {
+    if(dossierOpen){
+      if(e.code === 'Escape') setDossier(false);
+      if(e.code === 'Space' || e.code === 'Enter' || e.code === 'Escape') e.preventDefault();
+      return;
+    }
+    // Space를 누르고 있을 때 발생하는 반복 keydown도 먼저 막아야
+    // 브라우저의 기본 페이지 스크롤이 패닝 도중 되살아나지 않는다.
+    if(e.code === 'Space' || e.code === 'Enter') e.preventDefault();
+    if(e.repeat) return;
+    if(e.code === 'Space' || e.code === 'Enter'){ keyHeld = true; trigger(e); }
+    else if(e.code === 'KeyR'){
+      e.preventDefault();
+      if(S.phase === 'between' && S.expedition.active) returnToTown();
+      else startReload();
+    }
+    else if(e.code === 'ShiftLeft' || e.code === 'ShiftRight'){
+      e.preventDefault(); wake();
+      if(canFocus()){ focusKeyHeld = true; focusing = true; }
+    }
+  });
+  window.addEventListener('keyup', e => {
+    // 포커스된 버튼은 Space keyup에도 기본 클릭/스크롤을 만들 수 있다.
+    if(e.code === 'Space' || e.code === 'Enter'){
+      e.preventDefault(); keyHeld = false; release();
+    }
+    else if(e.code === 'ShiftLeft' || e.code === 'ShiftRight') focusKeyHeld = false;
+  });
+  window.addEventListener('blur', () => {
+    ptrHeld = false; keyHeld = false; focusPtrHeld = false; focusKeyHeld = false;
+    holdArmed = false; holdT = 0; fanning = false; focusing = false;
+  });
+  $('sndBtn').onclick = () => {
+    wake();
+    SFX.on = !SFX.on;
+    $('sndBtn').classList.toggle('on', SFX.on);
+    $('sndBtn').textContent = SFX.on ? '\u266a' : '\u266a\u0338';
+    if(SFX.on) sfxReload();
+  };
+  function setLanguage(next){
+    if(next !== 'ko' && next !== 'en') return;
+    currentLanguage = next;
+    try{ localStorage.setItem(LANGUAGE_KEY, currentLanguage); }catch(e){}
+    applyStaticLanguage();
+    if(S.pendingRumor) S.pendingRumor = rumorFor(S.stage);
+    if(S.pendingMastery){
+      S.pendingMastery = currentLanguage === 'ko'
+        ? `두목 돌파 · 머리 x${headMult().toFixed(0)} · 몸 숙련 x${bodyMastery().toFixed(2)}`
+        : `Boss defeated · Head x${headMult().toFixed(0)} · Body mastery x${bodyMastery().toFixed(2)}`;
+    }
+    msgT = 0;
+    doctrineRenderKey = ''; silKey = '';
+    shopDirty = true; chipsDirty = true; intelDirty = true;
+    renderSlots();
+  }
+  $('langBtn').onclick = () => setLanguage(currentLanguage === 'ko' ? 'en' : 'ko');
+
+  /* ───── save ─────
+     localStorage를 주 저장소로 쓰고, Claude 아티팩트 안에서 열렸을 때만
+     window.storage를 보조로 함께 쓴다. 둘 다 실패하면 조용히 비활성. */
+  const LEGACY_SAVE_KEY = 'revolver:save2';
+  const SLOT_PREFIX = 'revolver:save2:slot';
+  const ACTIVE_SLOT_KEY = 'revolver:activeSlot';
+  const SLOT_MIGRATION_KEY = 'revolver:slotsMigrated';
+  const LVL_DEFAULT = { dmg:0, gauge:0, trigger:0, reload:0, cyl:0, vest:0, hp:0, hunch:0,
+                        focusUses:0, focusSlow:0 };
+  const CAN_LS = (() => {
+    try{
+      localStorage.setItem('__revolver_probe','1');
+      localStorage.removeItem('__revolver_probe');
+      return true;
+    }catch(e){ return false; }
+  })();
+  let activeSlot = 1;
+  try{
+    activeSlot = Math.max(1, Math.min(3, parseInt(localStorage.getItem(ACTIVE_SLOT_KEY), 10) || 1));
+  }catch(e){}
+  const saveKey = (slot=activeSlot) => SLOT_PREFIX + slot;
+  let saveT = 0, savedFlash = 0, lastSaveAt = 0, noSave = false;
+
+  // 기존 단일 세이브는 1번 슬롯에 한 번만 복사한다. 원본은 안전망으로 남긴다.
+  function migrateLegacySave(){
+    if(!CAN_LS) return;
+    try{
+      if(localStorage.getItem(SLOT_MIGRATION_KEY)) return;
+      const legacy = localStorage.getItem(LEGACY_SAVE_KEY);
+      if(legacy && !localStorage.getItem(saveKey(1))) localStorage.setItem(saveKey(1), legacy);
+      localStorage.setItem(SLOT_MIGRATION_KEY, '1');
+    }catch(e){}
+  }
+  migrateLegacySave();
+
+  function snapshot(){
+    // 쓰러지는 연출 중 저장해도 같은 현상금을 다시 받을 수 없도록 승리를 선반영한다.
+    const pendingVictory = S.phase === 'down';
+    const savedStage = S.stage + (pendingVictory ? 1 : 0);
+    const savedCheckpoint = pendingVictory && S.stage % 5 === 0
+      ? Math.max(S.checkpoint, S.stage) : S.checkpoint;
+    // 재장전 탄은 시작할 때 이미 예비 탄약에서 빠진다. 저장에는 장전 완료 상태로 남긴다.
+    const savedAmmo = S.reload > 0
+      ? Math.min(capacity(), S.ammoStart + S.reloadLoad) : S.ammo;
+    return {
+      v: 19,
+      gold:S.gold, stage:savedStage, bestStage:Math.max(S.bestStage, savedStage),
+      chain:S.chain, bestChain:S.bestChain,
+      hp:S.hp, armor:S.armor, ammo:savedAmmo,
+      expedition:S.expedition, expeditionResult:S.expeditionResult,
+      lvl:S.lvl, deaths:S.deaths, playMs:S.playMs, checkpoint:savedCheckpoint,
+      shots:S.shots, crits:S.crits, kills:S.kills, fanShots:S.fanShots,
+      bestCombo:S.bestCombo, bestDraw:S.bestDraw, weakHits:S.weakHits,
+      focusActivations:S.focusActivations, dirStats:S.dirStats,
+      partStats:S.partStats, posStats:S.posStats,
+      doctrine:S.doctrine, doctrineChosen:S.doctrineChosen, doctrineStats:S.doctrineStats,
+      intel:S.intel, discovered:S.discovered
+    };
+  }
+
+  function save(){
+    if(noSave) return false;
+    const json = JSON.stringify(snapshot());
+    let ok = false;
+    try{ localStorage.setItem(saveKey(), json); ok = true; }catch(e){}
+    try{ if(window.storage && window.storage.set) window.storage.set(saveKey(), json); }catch(e){}
+    if(ok){ lastSaveAt = performance.now(); savedFlash = 1; renderSlots(); }
+    return ok;
+  }
+
+  function slotMeta(slot){
+    try{
+      const raw = localStorage.getItem(saveKey(slot));
+      if(!raw) return null;
+      const d = JSON.parse(raw);
+      return {
+        bestStage:Math.max(1, d.bestStage|0, d.stage|0),
+        playMs:Math.max(0, +d.playMs || 0)
+      };
+    }catch(e){ return null; }
+  }
+
+  function renderSlots(){
+    $('slots').innerHTML = [1,2,3].map(slot => {
+      const meta = slot === activeSlot
+        ? { bestStage:S.bestStage, playMs:S.playMs }
+        : slotMeta(slot);
+      const detail = meta
+        ? currentLanguage === 'ko'
+          ? `제${meta.bestStage} · ${clock(meta.playMs)}`
+          : `Duel ${meta.bestStage} · ${clock(meta.playMs)}`
+        : localText(bilingual('빈 슬롯','Empty'));
+      return `<button class="mini slot ${slot===activeSlot?'active':''}" data-slot="${slot}">`+
+             `${currentLanguage==='ko'?`${slot}번`:`Slot ${slot}`} · ${detail}</button>`;
+    }).join('');
+    $('slots').querySelectorAll('.slot').forEach(b => b.onclick = () => {
+      const slot = Math.max(1, Math.min(3, parseInt(b.dataset.slot, 10) || 1));
+      if(slot === activeSlot) return;
+      save();
+      noSave = true;          // beforeunload가 새 슬롯에 현재 데이터를 덮지 않게 한다
+      activeSlot = slot;
+      try{ localStorage.setItem(ACTIVE_SLOT_KEY, String(slot)); }catch(e){}
+      location.reload();
+    });
+  }
+
+  function applySave(d){
+    if(!d || typeof d !== 'object') return;
+    const legacyFocus = d.lvl && isFinite(d.lvl.focus) ? Math.max(0, d.lvl.focus|0) : 0;
+    Object.assign(S, d);
+    // 예전 저장본에 없던 항목은 기본값으로 메운다
+    S.lvl = Object.assign({}, LVL_DEFAULT, S.lvl);
+    for(const k in LVL_DEFAULT)
+      if(!isFinite(S.lvl[k])) S.lvl[k] = LVL_DEFAULT[k];
+    // v14의 단일 집중 훈련은 v15의 집중 횟수로 그대로 전환한다.
+    if(!(d.v >= 15) && legacyFocus > 0){
+      S.lvl.focusUses = Math.max(S.lvl.focusUses, legacyFocus);
+      S.migratedFocus = true;
+    }
+    delete S.lvl.focus;
+    S.stage = Math.max(1, S.stage|0);
+    S.bestStage = Math.max(S.stage, S.bestStage|0);
+    S.deaths = Math.max(0, S.deaths|0);
+    S.playMs = Math.max(0, +S.playMs || 0);
+    // v10 대칭 개편: 규칙이 바뀌어 장비를 이어받을 수 없다.
+    // 새 가격 기준으로 되살 수 있는 만큼 현상금으로 환산해 돌려준다.
+    // v11: 가죽 코트가 체력에서 아머로 분리됐다. 기존 투자는 체력 쪽으로 옮긴다.
+    if(d.v >= 10 && !(d.v >= 11)){
+      S.lvl.hp = S.lvl.vest|0;
+      S.lvl.vest = 0;
+      S.migrated = true;
+    }
+    S.checkpoint = Math.max(0, S.checkpoint|0);
+    if(!S.checkpoint && S.bestStage > 5) S.checkpoint = Math.floor((S.bestStage-1)/5)*5;
+    S.intel = S.intel && typeof S.intel === 'object' && !Array.isArray(S.intel)
+      ? Object.assign({}, S.intel) : {};
+    S.discovered = S.discovered && typeof S.discovered === 'object' && !Array.isArray(S.discovered)
+      ? Object.assign({}, S.discovered) : {};
+    S.weakHits = Math.max(0, S.weakHits|0);
+    if(!DOCTRINES.some(x => x.id === S.doctrine)) S.doctrine = 'precision';
+    S.doctrineChosen = d.doctrineChosen === true;
+    ensureCombatStats();
+    // 기존 세이브는 이미 통과한 현재 구간의 정보만 소급 지급한다.
+    if(!(d.v >= 16)){
+      const from = Math.max(2, S.checkpoint + 1);
+      const to = S.bestStage;
+      for(let stage=from; stage<=to; stage++) S.intel[stage] = 1;
+      S.migratedIntel = from <= to;
+    }
+    if(!(d.v >= 10)){
+      const back = 30*(Math.pow(1.42, S.lvl.dmg) - 1)/0.42
+                 + 26*(Math.pow(1.42, S.lvl.vest) - 1)/0.42;
+      S.gold = Math.floor(S.gold + back);
+      S.lvl = Object.assign({}, LVL_DEFAULT);
+      S.stage = 1; S.checkpoint = 0;
+      S.migrated = true;
+    }
+    S.chain = Math.max(0, S.chain|0);
+    // 예감 상한이 3 → 2로 내려갔다. 초과분은 값을 돌려준다.
+    if(S.lvl.hunch > 2){
+      S.gold += 3000 * Math.pow(3.4, 2) * (S.lvl.hunch - 2);
+      S.lvl.hunch = 2;
+    }
+    S.bestChain = Math.max(S.chain, S.bestChain|0);
+    if(!isFinite(S.gold) || S.gold < 0) S.gold = 0;
+    S.expedition = Object.assign(emptyExpedition(),
+      d.expedition && typeof d.expedition === 'object' ? d.expedition : {});
+    S.expedition.active = d.expedition && d.expedition.active === true;
+    for(const key of ['kills','reserveAmmo','securedGold','carriedGold','startStage']){
+      const fallback = key === 'startStage' ? S.stage : 0;
+      S.expedition[key] = Math.max(key === 'startStage' ? 1 : 0,
+        Math.floor(+S.expedition[key] || fallback));
+    }
+    S.expeditionResult = Object.assign(emptyExpeditionResult(),
+      d.expeditionResult && typeof d.expeditionResult === 'object' ? d.expeditionResult : {});
+    S.hp = Number.isFinite(+d.hp) ? Math.max(0, Math.min(maxHp(), +d.hp)) : maxHp();
+    S.armor = Number.isFinite(+d.armor) ? Math.max(0, Math.min(armorMax(), d.armor|0)) : armorMax();
+    S.ammo = Number.isFinite(+d.ammo) ? Math.max(0, Math.min(capacity(), d.ammo|0)) : capacity();
+    S.reload = 0; S.reloadLoad = 0;
+    if(S.expedition.active && S.hp <= 0) S.expedition.active = false;
+  }
+
+  async function load(){
+    let done = false;
+    try{
+      const raw = localStorage.getItem(saveKey());
+      if(raw){ applySave(JSON.parse(raw)); done = true; }
+    }catch(e){}
+    if(!done){
+      try{
+        if(window.storage && window.storage.get){
+          let r = await window.storage.get(saveKey());
+          // localStorage를 쓰지 못하는 환경도 기존 단일 세이브를 1번에서 읽는다.
+          if((!r || !r.value) && activeSlot === 1) r = await window.storage.get(LEGACY_SAVE_KEY);
+          if(r && r.value){ applySave(JSON.parse(r.value)); save(); }
+        }
+      }catch(e){}
+    }
+    if(S.expedition.active) newDuel(true);
+    else enterTownReady(true);
+    renderSlots();
+    sendSessionStart();
+    flushTelemetry();
+    if(S.migratedFocus) msg(localText(bilingual('기존 집중 훈련을 집중 횟수로 전환했다','Previous Focus Training was converted into Focus Uses')), 6);
+    else if(S.migrated) msg(localText(bilingual('규칙이 바뀌었다 — 장비를 현상금으로 돌려받았다','The rules changed — your outfit was refunded as bounty')), 6);
+    else if(S.migratedIntel) msg(localText(bilingual('지나온 총잡이들의 소문이 현상금 목록에 기록됐다','Rumors about past gunslingers were added to the Bounty Board')), 6);
+  }
+
+  // 탭을 닫거나 백그라운드로 보낼 때 마지막 상태를 흘리지 않게
+  window.addEventListener('beforeunload', () => { save(); beaconTelemetry(); });
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden){ save(); beaconTelemetry(); }
+    else flushTelemetry();
+  });
+  window.addEventListener('error', event => {
+    telemetryEvent('runtime_error', {
+      kind:'error',
+      message:String(event.message || 'unknown').slice(0, 240)
+    }, S.stage);
+  });
+  window.addEventListener('unhandledrejection', event => {
+    telemetryEvent('runtime_error', {
+      kind:'unhandledrejection',
+      message:String(event.reason && event.reason.message || event.reason || 'unknown').slice(0, 240)
+    }, S.stage);
+  });
+
+  let wipeArm = 0;
+  $('wipeBtn').onclick = () => {
+    if(wipeArm > 0){
+      noSave = true;
+      try{ localStorage.removeItem(saveKey()); }catch(e){}
+      try{ if(window.storage && window.storage.delete) window.storage.delete(saveKey()); }catch(e){}
+      location.reload();
+      return;
+    }
+    wipeArm = 4;
+    $('wipeBtn').classList.add('armed');
+    $('wipeBtn').textContent = currentLanguage === 'ko'
+      ? `${activeSlot}번 삭제? 다시 누르기`
+      : `Delete Slot ${activeSlot}? Press again`;
+  };
+
+  /* ───── boot ───── */
+  function resize(){
+    const r = cv.getBoundingClientRect();
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.max(1, r.width*DPR); cv.height = Math.max(1, r.height*DPR);
+    W = r.width; H = r.height;
+    const c = cc.getBoundingClientRect();
+    CW = c.width || 66;
+    cc.width = Math.max(1, CW*DPR); cc.height = Math.max(1, CW*DPR);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  enterTownReady();
+  load();
+  renderShop();
+
+  let last = performance.now();
+  function frame(t){
+    const dt = Math.min(0.05, (t - last)/1000);
+    last = t;
+    if(!dossierOpen){
+      S.playMs += dt*1000;
+      update(dt);
+      saveT += dt; if(saveT > 6){ saveT = 0; save(); }
+    }
+    draw(); drawCylinder(); syncDom();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
